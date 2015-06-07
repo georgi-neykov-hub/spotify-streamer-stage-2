@@ -1,4 +1,4 @@
-package com.neykov.spotifystreamer;
+package com.neykov.spotifystreamer.ui;
 
 import android.content.res.Resources;
 import android.graphics.Rect;

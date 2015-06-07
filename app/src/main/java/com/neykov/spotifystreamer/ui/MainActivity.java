@@ -1,10 +1,12 @@
-package com.neykov.spotifystreamer;
+package com.neykov.spotifystreamer.ui;
 
-import android.support.v4.app.Fragment;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.neykov.spotifystreamer.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -12,8 +14,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Fragment artistFragment = getSupportFragmentManager().findFragmentByTag(ArtistListFragment.TAG);
-        if (artistFragment == null) {
+        if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content, ArtistListFragment.newInstance(), ArtistListFragment.TAG)
                     .commit();
@@ -36,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            this.startActivity(intent);
             return true;
         }
 

@@ -1,4 +1,4 @@
-package com.neykov.spotifystreamer;
+package com.neykov.spotifystreamer.ui;
 
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -14,6 +14,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SearchView;
 
+import com.neykov.spotifystreamer.R;
+import com.neykov.spotifystreamer.SpotifyStreamerApplication;
+import com.neykov.spotifystreamer.adapter.ArtistAdapter;
 import com.neykov.spotifystreamer.networking.ArtistQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
 
@@ -22,13 +25,14 @@ import java.util.List;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import kaaes.spotify.webapi.android.models.Tracks;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ArtistListFragment extends Fragment {
+public class ArtistTopTracksFragment extends Fragment {
 
-    public static String TAG = ArtistListFragment.class.getSimpleName();
+    public static String TAG = ArtistTopTracksFragment.class.getSimpleName();
 
     private static final String KEY_LAYOUT_MANAGER_STATE = "ArtistListFragment.LayoutManagerState";
     private static final String KEY_ADAPTER_STATE = "ArtistListFragment.ArtistAdapterState";
@@ -36,8 +40,8 @@ public class ArtistListFragment extends Fragment {
     private static final String ARG_QUERY_STRING = "ArtistListFragment.Query";
     private static final int QUERY_LOADER_ID = 0x1234;
 
-    public static ArtistListFragment newInstance() {
-        return new ArtistListFragment();
+    public static ArtistTopTracksFragment newInstance() {
+        return new ArtistTopTracksFragment();
     }
 
     private SearchView mSearchView;
@@ -46,7 +50,7 @@ public class ArtistListFragment extends Fragment {
     private ArtistAdapter mArtistAdapter;
 
     private SpotifyService mApiService;
-    private Loader<NetworkResult<ArtistsPager>> MqueryLoader;
+    private Loader<NetworkResult<Tracks>> MqueryLoader;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

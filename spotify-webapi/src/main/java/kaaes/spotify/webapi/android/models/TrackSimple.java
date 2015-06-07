@@ -1,9 +1,10 @@
 package kaaes.spotify.webapi.android.models;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class TrackSimple {
+public class TrackSimple implements Serializable {
     public List<ArtistSimple> artists;
     public List<String> available_markets;
     public Boolean is_playable;

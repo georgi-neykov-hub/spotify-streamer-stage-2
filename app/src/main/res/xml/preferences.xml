@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<ListPreference
+    android:key="prefferedCountry"
+    android:title="@string/pref_top_tracks_country"
+    android:persistent="true"
+    android:entries="@array/countryNames"
+    android:entryValues="@array/countryISOCodes"
+    android:defaultValue="US"/>
+</PreferenceScreen>

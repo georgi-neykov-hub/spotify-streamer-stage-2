@@ -7,5 +7,10 @@
     <string name="message_artist_not_found">No artist not found. Try changing the search.</string>
     <string name="message_artist_query_error">Failed to get the results.</string>
     <string name="action_retry">Retry</string>
+    <string name="pref_top_tracks_country">Top 10 Tracks Country</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_settings">SettingsActivity</string>
 
 </resources>

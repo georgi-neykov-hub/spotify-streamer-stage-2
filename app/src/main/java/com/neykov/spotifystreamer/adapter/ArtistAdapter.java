@@ -1,8 +1,6 @@
-package com.neykov.spotifystreamer;
+package com.neykov.spotifystreamer.adapter;
 
 import android.content.Context;
-import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,24 +8,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.neykov.spotifystreamer.R;
 import com.squareup.picasso.Picasso;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import kaaes.spotify.webapi.android.models.Artist;
 
-public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder> {
-
-    private static final String KEY_ITEMS_ARRAY = "ArtistAdapter.Items";
-
-    private static final String STRING_EMPTY_GENRE = "(no genre)";
-
-    private List<Artist> mArtists;
+public class ArtistAdapter extends BaseArrayAdapter<Artist, ArtistAdapter.ArtistViewHolder> {
 
     public ArtistAdapter() {
-        mArtists = new ArrayList<>();
+        super();
     }
 
     @Override
@@ -42,52 +31,9 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
         holder.onBind(getItemAt(position));
     }
 
-    @Override
-    public int getItemCount() {
-        return mArtists.size();
-    }
-
-    public Parcelable onSaveInstanceState() {
-        Bundle state = new Bundle();
-        Artist[] entries = new Artist[mArtists.size()];
-        mArtists.toArray(entries);
-        state.putSerializable(KEY_ITEMS_ARRAY, entries);
-        return state;
-    }
-
-    public void onRestoreInstanceState(Parcelable savedAdapterState) {
-        Bundle state = (Bundle) savedAdapterState;
-        if (state == null) {
-            throw new IllegalArgumentException("Invalid saved state provided.");
-        }
-        Artist[] items = (Artist[]) state.getSerializable(KEY_ITEMS_ARRAY);
-        if (items == null) {
-            throw new IllegalArgumentException("Invalid state argument.");
-        }
-
-        this.setItems(items);
-    }
-
-    public void setItems(List<Artist> artists) {
-        this.mArtists.clear();
-        mArtists.addAll(artists);
-        this.notifyDataSetChanged();
-    }
-
-    public void setItems(Artist[] artists) {
-        setItems(Arrays.asList(artists));
-    }
-
-    public void clearItems() {
-        this.mArtists.clear();
-        this.notifyDataSetChanged();
-    }
-
-    private Artist getItemAt(int position) {
-        return mArtists.get(position);
-    }
-
     public class ArtistViewHolder extends RecyclerView.ViewHolder {
+
+        private static final String STRING_EMPTY_GENRE = "(no genre)";
 
         private ImageView mImageView;
         private TextView mArtistTextView;
@@ -106,11 +52,11 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
             setGenres(artist);
         }
 
-        private void setGenres(Artist artist){
+        private void setGenres(Artist artist) {
             String genreLabel;
-            if(!artist.genres.isEmpty()) {
+            if (!artist.genres.isEmpty()) {
                 genreLabel = artist.genres.get(0);
-            }else {
+            } else {
                 genreLabel = STRING_EMPTY_GENRE;
             }
             mGenreTextView.setText(genreLabel);
@@ -121,7 +67,7 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
             Picasso picasso = Picasso.with(appContext);
             picasso.cancelRequest(view);
 
-            if(!artist.images.isEmpty()) {
+            if (!artist.images.isEmpty()) {
                 String url = artist.images.get(0).url;
                 picasso
                         .load(url)
@@ -130,7 +76,7 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
                         .placeholder(R.drawable.ic_av_equalizer)
                         .error(R.drawable.ic_av_equalizer)
                         .into(view);
-            }else {
+            } else {
                 picasso
                         .load(R.drawable.ic_av_equalizer)
                         .fit()
