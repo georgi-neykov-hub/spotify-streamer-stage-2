@@ -3,20 +3,25 @@ package com.neykov.spotifystreamer.ui;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.neykov.spotifystreamer.R;
+import com.neykov.spotifystreamer.ui.base.ActionBarConfigurable;
+import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ActionBarConfigurable {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initializeToolbar();
+
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.content, ArtistListFragment.newInstance(), ArtistListFragment.TAG)
+                    .replace(R.id.content_frame, ArtistListFragment.newInstance(), ArtistListFragment.TAG)
                     .commit();
         }
     }
@@ -30,18 +35,38 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                getSupportFragmentManager().popBackStack();
+                return true;
+            case R.id.action_settings:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                this.startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            this.startActivity(intent);
-            return true;
+    @Override
+    public void onApplyConfiguratorOptions(ActionbarConfigurator configurator) {
+        boolean hasTitle = configurator.hasScreenTitle();
+        getSupportActionBar().setDisplayShowTitleEnabled(hasTitle);
+
+        if (hasTitle) {
+            this.setTitle(configurator.getScreenTitle());
+            getSupportActionBar().setSubtitle(configurator.getScreenSubtitle());
         }
 
-        return super.onOptionsItemSelected(item);
+        if (configurator.hasBackNavigation()) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        } else {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        }
+    }
+
+    private void initializeToolbar(){
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        this.setSupportActionBar(toolbar);
     }
 }

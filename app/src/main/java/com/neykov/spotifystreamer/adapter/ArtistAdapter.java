@@ -44,6 +44,7 @@ public class ArtistAdapter extends BaseArrayAdapter<Artist, ArtistAdapter.Artist
             mImageView = (ImageView) itemView.findViewById(R.id.artistImage);
             mArtistTextView = (TextView) itemView.findViewById(R.id.artistLabel);
             mGenreTextView = (TextView) itemView.findViewById(R.id.genreLabel);
+            itemView.findViewById(R.id.itemView).setOnClickListener(mItemClickListener);
         }
 
         protected void onBind(Artist artist) {
@@ -85,5 +86,15 @@ public class ArtistAdapter extends BaseArrayAdapter<Artist, ArtistAdapter.Artist
                         .into(view);
             }
         }
+
+        private final View.OnClickListener mItemClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(getOnItemSelectedListener() != null){
+                    Artist artist = getItemAt(getAdapterPosition());
+                    getOnItemSelectedListener().onItemSelected(artist);
+                }
+            }
+        };
     }
 }

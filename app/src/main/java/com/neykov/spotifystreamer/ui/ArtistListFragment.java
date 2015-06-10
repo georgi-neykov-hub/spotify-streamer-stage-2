@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -16,9 +17,12 @@ import android.widget.SearchView;
 
 import com.neykov.spotifystreamer.R;
 import com.neykov.spotifystreamer.SpotifyStreamerApplication;
+import com.neykov.spotifystreamer.ViewUtils;
 import com.neykov.spotifystreamer.adapter.ArtistAdapter;
+import com.neykov.spotifystreamer.adapter.BaseArrayAdapter;
 import com.neykov.spotifystreamer.networking.ArtistQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
+import com.neykov.spotifystreamer.ui.base.BaseFragment;
 
 import java.util.List;
 
@@ -29,7 +33,7 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ArtistListFragment extends Fragment {
+public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter.OnItemSelectedListener<Artist>{
 
     public static String TAG = ArtistListFragment.class.getSimpleName();
 
@@ -37,29 +41,41 @@ public class ArtistListFragment extends Fragment {
     private static final String KEY_ADAPTER_STATE = "ArtistListFragment.ArtistAdapterState";
 
     private static final String ARG_QUERY_STRING = "ArtistListFragment.Query";
-    private static final int QUERY_LOADER_ID = 0x1234;
+    private static final int QUERY_LOADER_ID = (TAG + ".LoaderID").hashCode();
 
     public static ArtistListFragment newInstance() {
         return new ArtistListFragment();
     }
 
+    private ArtistAdapter mArtistAdapter;
+    private SpotifyService mApiService;
+
     private SearchView mSearchView;
     private RecyclerView mArtistsRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
-    private ArtistAdapter mArtistAdapter;
-
-    private SpotifyService mApiService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mApiService = SpotifyStreamerApplication.getInstance().getSpotifyAPIService();
-        mArtistAdapter = new ArtistAdapter();
 
+        mArtistAdapter = new ArtistAdapter();
         if (savedInstanceState != null) {
             Parcelable arrayData = savedInstanceState.getParcelable(KEY_ADAPTER_STATE);
             mArtistAdapter.onRestoreInstanceState(arrayData);
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mArtistAdapter.setOnItemSelectedListener(null);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mArtistAdapter.setOnItemSelectedListener(this);
     }
 
     @Override
@@ -76,6 +92,24 @@ public class ArtistListFragment extends Fragment {
         configureRecyclerView(savedInstanceState);
         setEventListeners();
         return rootView;
+    }
+
+    @Override
+    public void onItemSelected(Artist item) {
+        ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(item);
+        getFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
+                .addToBackStack(ArtistTopTracksFragment.TAG)
+                .commit();
+
+        //Execute the transaction synchronously to avoid
+        // any multiple instances of the fragment by doing fast-clicks.
+        getFragmentManager().executePendingTransactions();
+    }
+
+    @Override
+    public boolean hasBackNavigation() {
+        return false;
     }
 
     private void intializeViewReferences(View rootView) {
@@ -97,6 +131,8 @@ public class ArtistListFragment extends Fragment {
         RecyclerView.ItemDecoration decoration = new SpaceItemDecoration(
                 getResources(),
                 R.dimen.artist_item_spacing,
+                R.dimen.activity_vertical_margin,
+                R.dimen.activity_vertical_margin,
                 SpaceItemDecoration.VERTICAL);
         mArtistsRecyclerView.addItemDecoration(decoration);
     }
@@ -105,16 +141,17 @@ public class ArtistListFragment extends Fragment {
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                if(TextUtils.isEmpty(query)){
+                    mArtistAdapter.clearItems();
+                }else {
+                    executeArtistQuery(query);
+                }
+                ViewUtils.hideSoftwareKeyboard(getActivity());
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if(TextUtils.isEmpty(newText)){
-                    mArtistAdapter.clearItems();
-                }else {
-                    executeArtistQuery(newText);
-                }
                 return true;
             }
         });
@@ -128,11 +165,11 @@ public class ArtistListFragment extends Fragment {
 
     private void showQueryErrorMessage() {
         View container = getActivity().findViewById(android.R.id.content);
-        Snackbar.make(container, R.string.message_artist_query_error, Snackbar.LENGTH_SHORT)
+        Snackbar.make(container, R.string.message_artist_query_error, Snackbar.LENGTH_LONG)
                 .setAction(R.string.action_retry, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        getActivity().getLoaderManager().getLoader(QUERY_LOADER_ID).reset();
+                        executeArtistQuery(mSearchView.getQuery().toString());
                     }
                 })
                 .show();
@@ -144,7 +181,7 @@ public class ArtistListFragment extends Fragment {
                 .show();
     }
 
-    private final android.support.v4.app.LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>> mQueryCallbacks = new android.support.v4.app.LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>>() {
+    private final LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>> mQueryCallbacks = new LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>>() {
 
         @Override
         public Loader<NetworkResult<ArtistsPager>> onCreateLoader(int id, Bundle args) {
@@ -173,5 +210,4 @@ public class ArtistListFragment extends Fragment {
 
         }
     };
-
 }

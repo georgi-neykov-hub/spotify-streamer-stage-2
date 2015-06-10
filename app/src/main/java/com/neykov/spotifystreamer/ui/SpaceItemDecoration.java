@@ -19,28 +19,47 @@ public class SpaceItemDecoration extends RecyclerView.ItemDecoration {
     public static final int VERTICAL = 2;
 
     private int space;
+    private int startSpace;
+    private int endSpace;
     private final @Direction int direction;
 
-    public SpaceItemDecoration(Resources resources, @DimenRes int dimenResId, @Direction int direction) {
-        this(resources.getDimensionPixelSize(dimenResId), direction);
+    public SpaceItemDecoration(Resources resources,
+                               @DimenRes int dimenResId,
+                               @DimenRes int startDimenResId,
+                               @DimenRes int endDimenResId,
+                               @Direction int direction) {
+        this(resources.getDimensionPixelSize(dimenResId),
+                resources.getDimensionPixelSize(startDimenResId),
+                resources.getDimensionPixelSize(endDimenResId),
+                direction);
     }
 
-    public SpaceItemDecoration(int spacePixels, @Direction int direction) {
+    public SpaceItemDecoration(int spacePixels, int startSpacePixels, int endSpacePixels, @Direction int direction) {
         this.space = spacePixels;
+        this.endSpace = endSpacePixels;
+        this.startSpace = startSpacePixels;
         this.direction = direction;
     }
 
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
         if(direction == HORIZONTAL){
-            outRect.right = space;
             if (parent.getChildAdapterPosition(view) == 0) {
-                outRect.left = space;
+                outRect.left = startSpace;
+                outRect.right = space;
+            }else if(parent.getChildAdapterPosition(view) == parent.getAdapter().getItemCount() - 1){
+                outRect.right = endSpace;
+            }else {
+                outRect.right = space;
             }
         }else {
-            outRect.bottom = space;
             if (parent.getChildAdapterPosition(view) == 0) {
-                outRect.top = space;
+                outRect.top = startSpace;
+                outRect.bottom = space;
+            }else if(parent.getChildAdapterPosition(view) == parent.getAdapter().getItemCount() - 1){
+                outRect.bottom = endSpace;
+            }else {
+                outRect.bottom = space;
             }
         }
     }

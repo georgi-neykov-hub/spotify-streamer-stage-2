@@ -10,7 +10,12 @@ import java.util.List;
 
 public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH>{
 
+    public interface OnItemSelectedListener<T>{
+        void onItemSelected(T item);
+    }
+
     private List<T> mItems;
+    private OnItemSelectedListener<T> mListener;
 
     protected BaseArrayAdapter() {
         mItems = new ArrayList<>();
@@ -60,4 +65,11 @@ public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> ex
         return mItems.get(position);
     }
 
+    protected OnItemSelectedListener<T> getOnItemSelectedListener(){
+        return mListener;
+    }
+
+    public void setOnItemSelectedListener(OnItemSelectedListener<T> listener){
+        mListener = listener;
+    }
 }

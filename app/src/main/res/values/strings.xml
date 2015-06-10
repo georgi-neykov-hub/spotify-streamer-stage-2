@@ -10,7 +10,6 @@
     <string name="pref_top_tracks_country">Top 10 Tracks Country</string>
 
 <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_settings">SettingsActivity</string>
-
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_top_tracks">Top Tracks</string>
 </resources>

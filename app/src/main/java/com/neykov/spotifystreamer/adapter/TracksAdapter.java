@@ -22,7 +22,7 @@ public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackVi
     @Override
     public TrackViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_artist, parent, false);
+                .inflate(R.layout.item_track, parent, false);
         return new TrackViewHolder(itemView);
     }
 
@@ -37,18 +37,18 @@ public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackVi
         private static final String STRING_EMPTY_ALBUM = "(no album)";
 
         private ImageView mImageView;
-        private TextView mArtistTextView;
+        private TextView mTrackNameTextView;
         private TextView mAlbumTextView;
 
         public TrackViewHolder(View itemView) {
             super(itemView);
-            mImageView = (ImageView) itemView.findViewById(R.id.artistImage);
-            mArtistTextView = (TextView) itemView.findViewById(R.id.artistLabel);
-            mAlbumTextView = (TextView) itemView.findViewById(R.id.genreLabel);
+            mImageView = (ImageView) itemView.findViewById(R.id.trackImage);
+            mTrackNameTextView = (TextView) itemView.findViewById(R.id.trackName);
+            mAlbumTextView = (TextView) itemView.findViewById(R.id.albumName);
         }
 
         protected void onBind(Track track) {
-            mArtistTextView.setText(track.name);
+            mTrackNameTextView.setText(track.name);
             setAlbum(track);
             loadImage(track, mImageView);
         }

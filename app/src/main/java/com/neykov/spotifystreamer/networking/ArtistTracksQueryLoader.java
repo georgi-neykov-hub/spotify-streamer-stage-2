@@ -14,11 +14,13 @@ import retrofit.RetrofitError;
 
 public class ArtistTracksQueryLoader extends AsyncTaskLoader<NetworkResult<Tracks>> {
 
+    private String mCountryCode;
     private Artist mArtist;
     private SpotifyService mApiService;
 
-    public ArtistTracksQueryLoader(Context context, SpotifyService apiService, Artist artist) {
+    public ArtistTracksQueryLoader(Context context, SpotifyService apiService, Artist artist, String countryCode) {
         super(context);
+        this.mCountryCode = countryCode;
         this.mApiService = apiService;
         this.mArtist = artist;
     }
@@ -29,6 +31,7 @@ public class ArtistTracksQueryLoader extends AsyncTaskLoader<NetworkResult<Track
         try {
             Map<String, Object> options = new LinkedHashMap<>();
             options.put("limit", 10);
+            options.put("country", mCountryCode);
             Tracks topTenTracks = mApiService.getArtistTopTrack(mArtist.id, options);
             result = new NetworkResult<>(topTenTracks);
         } catch (RetrofitError error) {

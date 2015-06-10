@@ -1,88 +1,130 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.SearchView;
 
+import com.neykov.spotifystreamer.PreferenceConstants;
 import com.neykov.spotifystreamer.R;
 import com.neykov.spotifystreamer.SpotifyStreamerApplication;
-import com.neykov.spotifystreamer.adapter.ArtistAdapter;
-import com.neykov.spotifystreamer.networking.ArtistQueryLoader;
+import com.neykov.spotifystreamer.adapter.TracksAdapter;
+import com.neykov.spotifystreamer.networking.ArtistTracksQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
+import com.neykov.spotifystreamer.ui.base.BaseFragment;
 
 import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
-import kaaes.spotify.webapi.android.models.ArtistsPager;
+import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ArtistTopTracksFragment extends Fragment {
+public class ArtistTopTracksFragment extends BaseFragment {
 
     public static String TAG = ArtistTopTracksFragment.class.getSimpleName();
 
-    private static final String KEY_LAYOUT_MANAGER_STATE = "ArtistListFragment.LayoutManagerState";
-    private static final String KEY_ADAPTER_STATE = "ArtistListFragment.ArtistAdapterState";
+    private static final String ARG_ARTIST = "ArtistTopTracksFragment.Artist";
+    private static final String KEY_LAYOUT_MANAGER_STATE = "ArtistTopTracksFragment.LayoutManagerState";
+    private static final String KEY_ADAPTER_STATE = "ArtistTopTracksFragment.TracksAdapterState";
+    private static final String ARG_QUERY_COUNTRYCODE_STRING = "ArtistTopTracksFragment.Query.CountryCode";
 
-    private static final String ARG_QUERY_STRING = "ArtistListFragment.Query";
-    private static final int QUERY_LOADER_ID = 0x1234;
+    private static final int QUERY_LOADER_ID = (TAG + ".LoaderID").hashCode();
 
-    public static ArtistTopTracksFragment newInstance() {
-        return new ArtistTopTracksFragment();
+    public static ArtistTopTracksFragment newInstance(Artist artist) {
+        if(artist == null){
+            throw new IllegalArgumentException("No artist provided.");
+        }
+
+        Bundle args = new Bundle();
+        args.putSerializable(ARG_ARTIST, artist);
+        ArtistTopTracksFragment instance = new ArtistTopTracksFragment();
+        instance.setArguments(args);
+        return instance;
     }
 
-    private SearchView mSearchView;
-    private RecyclerView mArtistsRecyclerView;
-    private RecyclerView.LayoutManager mLayoutManager;
-    private ArtistAdapter mArtistAdapter;
-
+    private Artist mArtist;
+    private TracksAdapter mTracksAdapter;
     private SpotifyService mApiService;
-    private Loader<NetworkResult<Tracks>> MqueryLoader;
+
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private RecyclerView mTracksRecyclerView;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mArtist = (Artist) getArguments().getSerializable(ARG_ARTIST);
         mApiService = SpotifyStreamerApplication.getInstance().getSpotifyAPIService();
-        mArtistAdapter = new ArtistAdapter();
 
+        mTracksAdapter = new TracksAdapter();
         if (savedInstanceState != null) {
             Parcelable arrayData = savedInstanceState.getParcelable(KEY_ADAPTER_STATE);
-            mArtistAdapter.onRestoreInstanceState(arrayData);
+            mTracksAdapter.onRestoreInstanceState(arrayData);
         }
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
-        outState.putParcelable(KEY_ADAPTER_STATE, mArtistAdapter.onSaveInstanceState());
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.layout_artist_list, container, false);
+        View rootView = inflater.inflate(R.layout.layout_track_list, container, false);
         intializeViewReferences(rootView);
         configureRecyclerView(savedInstanceState);
         setEventListeners();
         return rootView;
     }
 
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if(savedInstanceState == null){
+            executeTracksQuery();
+        }
+    }
+
+    @Override
+    public boolean hasBackNavigation() {
+        return true;
+    }
+
+    @Override
+    public String getScreenTitle() {
+        return getString(R.string.title_top_tracks);
+    }
+
+    @Override
+    public String getScreenSubtitle() {
+        if(mArtist.name != null) {
+            return mArtist.name;
+        }else {
+            return super.getScreenSubtitle();
+        }
+    }
+
     private void intializeViewReferences(View rootView) {
-        mArtistsRecyclerView = (RecyclerView) rootView.findViewById(R.id.artistList);
-        mSearchView = (SearchView) rootView.findViewById(R.id.searchView);
+        mTracksRecyclerView = (RecyclerView) rootView.findViewById(R.id.trackList);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
+    }
+
+    private void setEventListeners(){
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                executeTracksQuery();
+            }
+        });
     }
 
     private void configureRecyclerView(Bundle savedState) {
@@ -92,39 +134,27 @@ public class ArtistTopTracksFragment extends Fragment {
             mLayoutManager.onRestoreInstanceState(state);
         }
 
-        mArtistsRecyclerView.setLayoutManager(mLayoutManager);
-        mArtistsRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        mArtistsRecyclerView.setAdapter(mArtistAdapter);
+        mTracksRecyclerView.setLayoutManager(mLayoutManager);
+        mTracksRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        mTracksRecyclerView.setAdapter(mTracksAdapter);
 
         RecyclerView.ItemDecoration decoration = new SpaceItemDecoration(
                 getResources(),
                 R.dimen.artist_item_spacing,
+                R.dimen.activity_vertical_margin,
+                R.dimen.activity_vertical_margin,
                 SpaceItemDecoration.VERTICAL);
-        mArtistsRecyclerView.addItemDecoration(decoration);
+        mTracksRecyclerView.addItemDecoration(decoration);
     }
 
-    private void setEventListeners() {
-        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                return true;
-            }
+    private void executeTracksQuery() {
+        mSwipeRefreshLayout.setRefreshing(true);
+        String countryCode = getActivity()
+                .getSharedPreferences(PreferenceConstants.SHARED_PREFERENCES_FILENAME, Context.MODE_PRIVATE)
+                .getString(PreferenceConstants.KEY_PREFFERED_COUNTRY, PreferenceConstants.PREFFERED_COUNTRY_DEFAULT_VALUE);
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                if(TextUtils.isEmpty(newText)){
-                    mArtistAdapter.clearItems();
-                }else {
-                    executeArtistQuery(newText);
-                }
-                return true;
-            }
-        });
-    }
-
-    private void executeArtistQuery(String query) {
         Bundle args = new Bundle();
-        args.putString(ARG_QUERY_STRING, query);
+        args.putString(ARG_QUERY_COUNTRYCODE_STRING, countryCode);
         getLoaderManager().restartLoader(QUERY_LOADER_ID, args, mQueryCallbacks).forceLoad();
     }
 
@@ -140,30 +170,22 @@ public class ArtistTopTracksFragment extends Fragment {
                 .show();
     }
 
-    private void showArtistNotFoundMessage() {
-        View container = getActivity().findViewById(android.R.id.content);
-        Snackbar.make(container, R.string.message_artist_not_found, Snackbar.LENGTH_SHORT)
-                .show();
-    }
-
-    private final android.support.v4.app.LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>> mQueryCallbacks = new android.support.v4.app.LoaderManager.LoaderCallbacks<NetworkResult<ArtistsPager>>() {
+    private final LoaderManager.LoaderCallbacks<NetworkResult<Tracks>> mQueryCallbacks = new LoaderManager.LoaderCallbacks<NetworkResult<Tracks>>() {
 
         @Override
-        public Loader<NetworkResult<ArtistsPager>> onCreateLoader(int id, Bundle args) {
-            String query = args.getString(ARG_QUERY_STRING);
-            ArtistQueryLoader loader = new ArtistQueryLoader(getActivity(), mApiService, query);
+        public Loader<NetworkResult<Tracks>> onCreateLoader(int id, Bundle args) {
+            String countryCode = args.getString(ARG_QUERY_COUNTRYCODE_STRING);
+            ArtistTracksQueryLoader loader = new ArtistTracksQueryLoader(getActivity(),mApiService, mArtist, countryCode);
             return loader;
         }
 
         @Override
-        public void onLoadFinished(Loader<NetworkResult<ArtistsPager>> loader, NetworkResult<ArtistsPager> data) {
+        public void onLoadFinished(Loader<NetworkResult<Tracks>> loader, NetworkResult<Tracks> data) {
+            mSwipeRefreshLayout.setRefreshing(false);
             if (data.isSuccessful()) {
-                List<Artist> artists = data.getResponse().artists.items;
+                List<Track> artists = data.getResponse().tracks;
                 if (!artists.isEmpty()) {
-                    mArtistAdapter.setItems(artists);
-                } else {
-                    mArtistAdapter.clearItems();
-                    showArtistNotFoundMessage();
+                    mTracksAdapter.setItems(artists);
                 }
             } else {
                 showQueryErrorMessage();
@@ -171,9 +193,8 @@ public class ArtistTopTracksFragment extends Fragment {
         }
 
         @Override
-        public void onLoaderReset(Loader<NetworkResult<ArtistsPager>> loader) {
-
+        public void onLoaderReset(Loader<NetworkResult<Tracks>> loader) {
+            mSwipeRefreshLayout.setRefreshing(true);
         }
     };
-
 }
