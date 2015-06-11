@@ -6,4 +6,9 @@
     <dimen name="track_item_image_size">72dp</dimen>
     <dimen name="artist_item_image_size">72dp</dimen>
     <dimen name="artist_item_spacing">4dp</dimen>
+    <dimen name="rhythm_space_single">8dp</dimen>
+    <dimen name="rhythm_space_double">16dp</dimen>
+    <dimen name="rhythm_control_normal">48dp</dimen>
+    <dimen name="rhythm_space_half">4dp</dimen>
+
 </resources>
