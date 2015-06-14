@@ -11,7 +11,10 @@ import com.neykov.spotifystreamer.R;
 import com.neykov.spotifystreamer.ui.base.ActionBarConfigurable;
 import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 
-public class MainActivity extends AppCompatActivity implements ActionBarConfigurable {
+import kaaes.spotify.webapi.android.models.Artist;
+import kaaes.spotify.webapi.android.models.Track;
+
+public class MainActivity extends AppCompatActivity implements ActionBarConfigurable, ArtistListFragment.OnArtistSelectedListener, ArtistTopTracksFragment.OnTrackSelectedListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,5 +71,32 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
     private void initializeToolbar(){
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         this.setSupportActionBar(toolbar);
+    }
+
+    @Override
+    public void onArtistSelected(Artist artist) {
+        ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(artist);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
+                .addToBackStack(ArtistTopTracksFragment.TAG)
+                .commit();
+
+        //Execute the transaction synchronously to avoid
+        // any multiple instances of the fragment by doing fast-clicks.
+        getSupportFragmentManager().executePendingTransactions();
+    }
+
+    @Override
+    public void onTrackSelected(int trackNumber, Track[] tracks) {
+        TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance(
+                tracks, trackNumber);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, fragment, TracksPlaybackFragment.TAG)
+                .addToBackStack(TracksPlaybackFragment.TAG)
+                .commit();
+
+        //Execute the transaction synchronously to avoid
+        // any multiple instances of the fragment by doing fast-clicks.
+        getSupportFragmentManager().executePendingTransactions();
     }
 }

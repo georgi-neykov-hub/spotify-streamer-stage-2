@@ -1,5 +1,6 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -18,6 +19,7 @@ import android.view.ViewGroup;
 import com.neykov.spotifystreamer.PreferenceConstants;
 import com.neykov.spotifystreamer.R;
 import com.neykov.spotifystreamer.SpotifyStreamerApplication;
+import com.neykov.spotifystreamer.adapter.BaseArrayAdapter;
 import com.neykov.spotifystreamer.adapter.TracksAdapter;
 import com.neykov.spotifystreamer.networking.ArtistTracksQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
@@ -34,6 +36,10 @@ import kaaes.spotify.webapi.android.models.Tracks;
  * A simple {@link Fragment} subclass.
  */
 public class ArtistTopTracksFragment extends BaseFragment {
+
+    public interface OnTrackSelectedListener{
+        void onTrackSelected(int trackNumber, Track[] tracks);
+    }
 
     public static String TAG = ArtistTopTracksFragment.class.getSimpleName();
 
@@ -64,6 +70,23 @@ public class ArtistTopTracksFragment extends BaseFragment {
     private RecyclerView mTracksRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
 
+    private Track[] mTracksQueryResult;
+    private OnTrackSelectedListener mListener;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if(activity instanceof OnTrackSelectedListener){
+            mListener = (OnTrackSelectedListener) activity;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        mListener = null;
+        super.onDetach();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +94,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
         mApiService = SpotifyStreamerApplication.getInstance().getSpotifyAPIService();
 
         mTracksAdapter = new TracksAdapter();
+        mTracksAdapter.setOnItemSelectedListener(mItemSelectedListener);
         if (savedInstanceState != null) {
             Parcelable arrayData = savedInstanceState.getParcelable(KEY_ADAPTER_STATE);
             mTracksAdapter.onRestoreInstanceState(arrayData);
@@ -183,10 +207,9 @@ public class ArtistTopTracksFragment extends BaseFragment {
         public void onLoadFinished(Loader<NetworkResult<Tracks>> loader, NetworkResult<Tracks> data) {
             mSwipeRefreshLayout.setRefreshing(false);
             if (data.isSuccessful()) {
-                List<Track> artists = data.getResponse().tracks;
-                if (!artists.isEmpty()) {
-                    mTracksAdapter.setItems(artists);
-                }
+                List<Track> trackList = data.getResponse().tracks;
+                mTracksQueryResult = trackList.toArray(new Track[trackList.size()]);
+                mTracksAdapter.setItems(trackList);
             } else {
                 showQueryErrorMessage();
             }
@@ -195,6 +218,15 @@ public class ArtistTopTracksFragment extends BaseFragment {
         @Override
         public void onLoaderReset(Loader<NetworkResult<Tracks>> loader) {
             mSwipeRefreshLayout.setRefreshing(true);
+        }
+    };
+
+    private BaseArrayAdapter.OnItemSelectedListener<Track> mItemSelectedListener = new BaseArrayAdapter.OnItemSelectedListener<Track>() {
+        @Override
+        public void onItemSelected(int position, Track item) {
+            if(mListener != null){
+                mListener.onTrackSelected(position, mTracksQueryResult);
+            }
         }
     };
 }

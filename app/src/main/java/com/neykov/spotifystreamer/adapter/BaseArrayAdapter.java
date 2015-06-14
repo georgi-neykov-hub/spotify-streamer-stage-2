@@ -11,7 +11,7 @@ import java.util.List;
 public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH>{
 
     public interface OnItemSelectedListener<T>{
-        void onItemSelected(T item);
+        void onItemSelected(int position, T item);
     }
 
     private List<T> mItems;

@@ -1,9 +1,10 @@
 package kaaes.spotify.webapi.android.models;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class AlbumSimple {
+public class AlbumSimple implements Serializable{
     public String album_type;
     public List<String> available_markets;
     public Map<String, String> external_urls;

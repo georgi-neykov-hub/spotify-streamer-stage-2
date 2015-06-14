@@ -45,6 +45,7 @@ public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackVi
             mImageView = (ImageView) itemView.findViewById(R.id.trackImage);
             mTrackNameTextView = (TextView) itemView.findViewById(R.id.trackName);
             mAlbumTextView = (TextView) itemView.findViewById(R.id.albumName);
+            itemView.setOnClickListener(mClickListener);
         }
 
         protected void onBind(Track track) {
@@ -86,5 +87,14 @@ public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackVi
                         .into(view);
             }
         }
+
+        private View.OnClickListener mClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position = getAdapterPosition();
+                Track track = getItemAt(position);
+                getOnItemSelectedListener().onItemSelected(position, track);
+            }
+        };
     }
 }

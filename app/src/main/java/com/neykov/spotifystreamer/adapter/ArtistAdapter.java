@@ -91,8 +91,9 @@ public class ArtistAdapter extends BaseArrayAdapter<Artist, ArtistAdapter.Artist
             @Override
             public void onClick(View v) {
                 if(getOnItemSelectedListener() != null){
-                    Artist artist = getItemAt(getAdapterPosition());
-                    getOnItemSelectedListener().onItemSelected(artist);
+                    int position = getAdapterPosition();
+                    Artist artist = getItemAt(position);
+                    getOnItemSelectedListener().onItemSelected(position, artist);
                 }
             }
         };

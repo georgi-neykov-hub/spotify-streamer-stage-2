@@ -1,5 +1,6 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
@@ -35,6 +36,10 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
  */
 public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter.OnItemSelectedListener<Artist>{
 
+    public interface OnArtistSelectedListener{
+        void onArtistSelected(Artist artist);
+    }
+
     public static String TAG = ArtistListFragment.class.getSimpleName();
 
     private static final String KEY_LAYOUT_MANAGER_STATE = "ArtistListFragment.LayoutManagerState";
@@ -53,6 +58,22 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     private SearchView mSearchView;
     private RecyclerView mArtistsRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
+
+    private OnArtistSelectedListener mArtistListener;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if(activity instanceof OnArtistSelectedListener){
+            mArtistListener = (OnArtistSelectedListener) activity;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mArtistListener = null;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,16 +116,10 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     }
 
     @Override
-    public void onItemSelected(Artist item) {
-        ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(item);
-        getFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
-                .addToBackStack(ArtistTopTracksFragment.TAG)
-                .commit();
-
-        //Execute the transaction synchronously to avoid
-        // any multiple instances of the fragment by doing fast-clicks.
-        getFragmentManager().executePendingTransactions();
+    public void onItemSelected(int position, Artist item) {
+        if(mArtistListener != null){
+            mArtistListener.onArtistSelected(item);
+        }
     }
 
     @Override

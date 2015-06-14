@@ -26,13 +26,25 @@
             android:paddingRight="@dimen/rhythm_space_single">
 
             <TextView
+                android:id="@+id/trackTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/rhythm_space_single"
+                android:layout_alignParentTop="true"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:gravity="center"
+                android:ellipsize="end"
+                android:singleLine="true"
+                tools:text="Dennis Ferrer - I heard you say"/>
+
+            <TextView
                 android:id="@+id/timeElapsed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
                 android:layout_above="@+id/playbackControls"
+                android:layout_below="@+id/trackTitle"
                 android:gravity="center"
                 android:text="0:00"
                 tools:text="0:00" />
@@ -41,7 +53,7 @@
                 android:id="@+id/seekBar"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
+                android:layout_below="@+id/trackTitle"
                 android:layout_toLeftOf="@+id/timeTotal"
                 android:layout_toRightOf="@+id/timeElapsed"/>
 
@@ -49,10 +61,10 @@
                 android:id="@+id/timeTotal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
                 android:layout_above="@+id/playbackControls"
+                android:layout_below="@+id/trackTitle"
                 android:gravity="center"
                 tools:text="0:00" />
 
@@ -63,6 +75,7 @@
                 android:orientation="horizontal"
                 android:layout_centerHorizontal="true"
                 android:layout_below="@+id/seekBar"
+                android:layout_marginTop="@dimen/rhythm_space_half"
                 android:paddingLeft="@dimen/rhythm_space_single"
                 android:paddingRight="@dimen/rhythm_space_single"
                 android:paddingBottom="@dimen/rhythm_space_single">
