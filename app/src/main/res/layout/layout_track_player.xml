@@ -6,7 +6,7 @@
     android:orientation="vertical">
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/albumArtView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:src="@drawable/ic_av_equalizer"/>
@@ -104,8 +104,6 @@
             </LinearLayout>
 
         </RelativeLayout>
-
-
 
     </android.support.v7.widget.CardView>
 

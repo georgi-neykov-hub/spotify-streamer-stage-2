@@ -8,9 +8,6 @@ import android.net.Uri;
 import android.os.IBinder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import kaaes.spotify.webapi.android.models.Track;
 
@@ -26,6 +23,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
     public static final String EXTRA_TRACK_TO_PLAY = "PlaybackService.TrackToPlay";
 
     private TracklistHandler mTracklistHandler;
+    private PositionUpdater mPositionUpdater;
     private MediaPlayer mMediaPlayer;
     private PlaybackListener mPlaybackListener;
 
@@ -35,6 +33,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
     public void onCreate() {
         super.onCreate();
         mTracklistHandler = new TracklistHandler();
+        mPositionUpdater = new PositionUpdater();
     }
 
     @Override
@@ -42,6 +41,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
         super.onDestroy();
         stopForeground(true);
         clearPlayer();
+        mPositionUpdater.stopUpdating();
         mPlaybackListener = null;
     }
 
@@ -115,6 +115,11 @@ public class PlaybackService extends Service implements PlaybackInterface {
     }
 
     @Override
+    public void placeGlobalControls() {
+
+    }
+
+    @Override
     public void play() {
         if (mTracklistHandler.getTrackCount() == 0) {
             throw new IllegalStateException("The track list is empty.");
@@ -122,6 +127,10 @@ public class PlaybackService extends Service implements PlaybackInterface {
 
         if(mPlayerPrepared){
             mMediaPlayer.start();
+            mPositionUpdater.startUpdating(mMediaPlayer, mPlaybackListener);
+        }else {
+            Track current = mTracklistHandler.getCurrentTrack();
+            setPlayback(getUriFromTrack(current));
         }
     }
 
@@ -135,14 +144,27 @@ public class PlaybackService extends Service implements PlaybackInterface {
     @Override
     public void playNext() {
         if(mTracklistHandler.hasNext()){
-            mTracklistHandler.moveToNext();
-            play();
+            Track nextTrack = mTracklistHandler.moveToNext();
+            setPlayback(getUriFromTrack(nextTrack));
         }
     }
 
     @Override
     public void playPrevious() {
+        if(mTracklistHandler.hasPrevious()){
+            Track nextTrack = mTracklistHandler.moveToPrevious();
+            setPlayback(getUriFromTrack(nextTrack));
+        }
+    }
 
+    @Override
+    public void seekToPosition(int positionMillis) {
+        if(mPlayerPrepared){
+            mMediaPlayer.seekTo(positionMillis);
+            if(mPlaybackListener != null){
+                mPlaybackListener.onLoadStart();
+            }
+        }
     }
 
     @Override
@@ -163,7 +185,12 @@ public class PlaybackService extends Service implements PlaybackInterface {
 
     @Override
     public Track getCurrentTrack() {
-        return null;
+        return mTracklistHandler.getCurrentTrack();
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return mMediaPlayer != null && mMediaPlayer.isPlaying();
     }
 
     @Override
@@ -176,9 +203,13 @@ public class PlaybackService extends Service implements PlaybackInterface {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setOnPreparedListener(mPreparedListener);
+            mMediaPlayer.setOnErrorListener(mErrorListener);
+            mMediaPlayer.setOnSeekCompleteListener(mSeekListener);
+            mMediaPlayer.setOnCompletionListener(mCompletionListener);
         } else if (mMediaPlayer.isPlaying()) {
             mMediaPlayer.stop();
         }
+        mPositionUpdater.stopUpdating();
         mMediaPlayer.reset();
         mPlayerPrepared = false;
     }
@@ -192,8 +223,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
     }
 
     private Uri getUriFromTrack(Track target) {
-        Uri uri = Uri.parse(target.uri);
-        return uri;
+        return Uri.parse(target.preview_url);
     }
 
     private void setPlayback(Uri uri) {
@@ -211,6 +241,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
         public void onPrepared(MediaPlayer mp) {
             mPlayerPrepared = true;
             mp.start();
+            mPositionUpdater.startUpdating(mMediaPlayer, mPlaybackListener);
         }
     };
 
@@ -218,9 +249,11 @@ public class PlaybackService extends Service implements PlaybackInterface {
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
             mPlayerPrepared = false;
+            mPositionUpdater.stopUpdating();
             if(mPlaybackListener != null){
                 mPlaybackListener.onError();
             }
+
             return true;
         }
     };
@@ -232,65 +265,13 @@ public class PlaybackService extends Service implements PlaybackInterface {
         }
     };
 
-    private static class TracklistHandler {
-
-        private List<Track> mTracklist;
-        private Track mCurrentTrack;
-        private int mCurrentTrackNumber;
-
-        protected TracklistHandler(){
-            mTracklist = new ArrayList<>();
-        }
-
-        protected boolean hasPrevious(){
-            return mCurrentTrackNumber > 0;
-        }
-
-        protected boolean hasNext() {
-            return mCurrentTrackNumber < (mTracklist.size() - 1);
-        }
-
-        protected Track providePrevious() {
-            if (hasPrevious()) {
-                setCurrentTrack(mCurrentTrackNumber - 1);
+    private MediaPlayer.OnSeekCompleteListener mSeekListener = new MediaPlayer.OnSeekCompleteListener() {
+        @Override
+        public void onSeekComplete(MediaPlayer mp) {
+            if(mPlaybackListener != null){
+                mPlaybackListener.onLoadDone();
             }
-
-            return getCurrentTrack();
         }
+    };
 
-        protected Track moveToNext(){
-            if (hasNext()) {
-                setCurrentTrack(mCurrentTrackNumber + 1);
-            }
-
-            return getCurrentTrack();
-        }
-
-        protected int getTrackCount(){
-            return mTracklist.size();
-        }
-
-        protected Track getCurrentTrack() {
-            return mCurrentTrack;
-        }
-
-        protected void setTrackslist(Track[] tracks){
-            if(tracks.length == 0){
-                throw new IllegalArgumentException("No tracks provided, length = 0");
-            }
-
-            mTracklist.clear();
-            mTracklist.addAll(Arrays.asList(tracks));
-            mCurrentTrack = getTrack(0);
-        }
-
-        protected Track getTrack(int number) {
-            return mTracklist.get(number);
-        }
-
-        private void setCurrentTrack(int number){
-            mCurrentTrack = getTrack(number);
-            mCurrentTrackNumber = number;
-        }
-    }
 }

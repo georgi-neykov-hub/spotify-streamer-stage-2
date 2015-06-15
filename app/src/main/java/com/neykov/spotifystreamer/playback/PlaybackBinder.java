@@ -2,21 +2,24 @@ package com.neykov.spotifystreamer.playback;
 
 import android.os.Binder;
 
-import java.util.List;
-
 import kaaes.spotify.webapi.android.models.Track;
 
-public class PlaybackBinder extends Binder implements PlaybackInterface{
+public class PlaybackBinder extends Binder implements PlaybackInterface {
 
     private PlaybackInterface mService;
 
-    /*package*/ PlaybackBinder(PlaybackService service){
+    /*package*/ PlaybackBinder(PlaybackService service) {
         this.mService = service;
     }
 
     @Override
     public void setTracklist(Track[] tracklist) {
         mService.setTracklist(tracklist);
+    }
+
+    @Override
+    public void placeGlobalControls() {
+        mService.placeGlobalControls();
     }
 
     @Override
@@ -40,13 +43,23 @@ public class PlaybackBinder extends Binder implements PlaybackInterface{
     }
 
     @Override
+    public void seekToPosition(int positionMillis) {
+        mService.seekToPosition(positionMillis);
+    }
+
+    @Override
     public void setCurrentTrack(int trackNumber) {
         mService.setCurrentTrack(trackNumber);
     }
 
     @Override
     public Track getCurrentTrack() {
-        return null;
+        return mService.getCurrentTrack();
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return mService.isPlaying();
     }
 
     @Override
