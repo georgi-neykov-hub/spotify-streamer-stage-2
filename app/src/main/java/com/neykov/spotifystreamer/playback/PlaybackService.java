@@ -28,6 +28,7 @@ public class PlaybackService extends Service implements PlaybackInterface {
     private PlaybackListener mPlaybackListener;
 
     private boolean mPlayerPrepared;
+    private boolean mPlayerActive;
 
     @Override
     public void onCreate() {
@@ -84,11 +85,20 @@ public class PlaybackService extends Service implements PlaybackInterface {
 
     private void handleSetTrackslistAction(Intent intent) {
         Track[] tracklist = (Track[]) intent.getSerializableExtra(EXTRA_TRACKLIST);
-        setTracklist(tracklist);
+        if (tracklist == null) {
+            throw new IllegalArgumentException("Null tracks array provided.");
+        } else if (tracklist.length == 0) {
+            throw new IllegalArgumentException("Empty tracks array provided.");
+        } else {
+            resetPlayer();
+            mTracklistHandler.setTrackslist(tracklist);
+        }
 
         int trackToPlay = intent.getIntExtra(EXTRA_TRACK_TO_PLAY, -1);
         if (trackToPlay != -1) {
             setCurrentTrack(trackToPlay);
+        }else {
+            setCurrentTrack(0);
         }
     }
 
@@ -99,19 +109,8 @@ public class PlaybackService extends Service implements PlaybackInterface {
 
     @Override
     public boolean onUnbind(Intent intent) {
+        mPlaybackListener = null;
         return super.onUnbind(intent);
-    }
-
-    @Override
-    public void setTracklist(Track[] tracklist) {
-        if (tracklist == null) {
-            throw new IllegalArgumentException("Null tracks array provided.");
-        } else if (tracklist.length == 0) {
-            throw new IllegalArgumentException("Empty tracks array provided.");
-        } else {
-            resetPlayer();
-            mTracklistHandler.setTrackslist(tracklist);
-        }
     }
 
     @Override
@@ -128,6 +127,9 @@ public class PlaybackService extends Service implements PlaybackInterface {
         if(mPlayerPrepared){
             mMediaPlayer.start();
             mPositionUpdater.startUpdating(mMediaPlayer, mPlaybackListener);
+            if(mPlaybackListener != null){
+                mPlaybackListener.onPlaybackStateChanged(true);
+            }
         }else {
             Track current = mTracklistHandler.getCurrentTrack();
             setPlayback(getUriFromTrack(current));
@@ -138,37 +140,39 @@ public class PlaybackService extends Service implements PlaybackInterface {
     public void pause() {
         if(mMediaPlayer.isPlaying()){
             mMediaPlayer.pause();
+            if(mPlaybackListener != null){
+                mPlaybackListener.onPlaybackStateChanged(false);
+            }
         }
     }
 
     @Override
     public void playNext() {
         if(mTracklistHandler.hasNext()){
-            Track nextTrack = mTracklistHandler.moveToNext();
-            setPlayback(getUriFromTrack(nextTrack));
+            mTracklistHandler.moveToNext();
+            setCurrentTrack(mTracklistHandler.getCurrentTrackNumber());
         }
     }
 
     @Override
     public void playPrevious() {
         if(mTracklistHandler.hasPrevious()){
-            Track nextTrack = mTracklistHandler.moveToPrevious();
-            setPlayback(getUriFromTrack(nextTrack));
+            mTracklistHandler.moveToPrevious();
+            setCurrentTrack(mTracklistHandler.getCurrentTrackNumber());
         }
     }
 
     @Override
     public void seekToPosition(int positionMillis) {
         if(mPlayerPrepared){
-            mMediaPlayer.seekTo(positionMillis);
             if(mPlaybackListener != null){
                 mPlaybackListener.onLoadStart();
             }
+            mMediaPlayer.seekTo(positionMillis);
         }
     }
 
-    @Override
-    public void setCurrentTrack(int trackToPlay) {
+    private void setCurrentTrack(int trackToPlay) {
         if (mTracklistHandler.getTrackCount() == 0) {
             throw new IllegalStateException("The track list is empty.");
         }
@@ -178,6 +182,10 @@ public class PlaybackService extends Service implements PlaybackInterface {
         }
 
         mTracklistHandler.setCurrentTrack(trackToPlay);
+        if(mPlaybackListener != null){
+            mPlaybackListener.onPlaybackStateChanged(false);
+            mPlaybackListener.onTrackChanged(getCurrentTrack());
+        }
         resetPlayer();
         Track current = mTracklistHandler.getCurrentTrack();
         setPlayback(getUriFromTrack(current));
@@ -191,6 +199,11 @@ public class PlaybackService extends Service implements PlaybackInterface {
     @Override
     public boolean isPlaying() {
         return mMediaPlayer != null && mMediaPlayer.isPlaying();
+    }
+
+    @Override
+    public boolean isActive() {
+        return isPlaying() || mPlayerActive;
     }
 
     @Override
@@ -229,10 +242,18 @@ public class PlaybackService extends Service implements PlaybackInterface {
     private void setPlayback(Uri uri) {
         resetPlayer();
         try {
+            mPlayerActive = true;
+            if(mPlaybackListener != null){
+                mPlaybackListener.onLoadStart();
+            }
+
             mMediaPlayer.setDataSource(this, uri);
             mMediaPlayer.prepareAsync();
         } catch (IOException e) {
-            mPlaybackListener.onError();
+            mPlayerActive = false;
+            if(mPlaybackListener != null) {
+                mPlaybackListener.onError();
+            }
         }
     }
 
@@ -241,6 +262,10 @@ public class PlaybackService extends Service implements PlaybackInterface {
         public void onPrepared(MediaPlayer mp) {
             mPlayerPrepared = true;
             mp.start();
+            if(mPlaybackListener != null){
+                mPlaybackListener.onLoadDone();
+                mPlaybackListener.onPlaybackStateChanged(true);
+            }
             mPositionUpdater.startUpdating(mMediaPlayer, mPlaybackListener);
         }
     };
@@ -249,9 +274,11 @@ public class PlaybackService extends Service implements PlaybackInterface {
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
             mPlayerPrepared = false;
+            mPlayerActive = false;
             mPositionUpdater.stopUpdating();
             if(mPlaybackListener != null){
                 mPlaybackListener.onError();
+                mPlaybackListener.onPlaybackStateChanged(false);
             }
 
             return true;

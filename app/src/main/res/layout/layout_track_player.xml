@@ -3,7 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin">
 
     <ImageView
         android:id="@+id/albumArtView"
@@ -14,37 +18,64 @@
     <android.support.v7.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:padding="@dimen/rhythm_space_single"
-        android:layout_margin="@dimen/rhythm_space_double">
+        android:layout_gravity="top|center_horizontal">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingLeft="@dimen/rhythm_space_single"
-            android:paddingRight="@dimen/rhythm_space_single">
+            android:layout_height="match_parent"
+            android:paddingTop="@dimen/rhythm_space_single"
+            android:paddingBottom="@dimen/rhythm_space_single"
+            android:paddingLeft="@dimen/rhythm_space_double"
+            android:paddingRight="@dimen/rhythm_space_double"
+            android:animateLayoutChanges="true">
+
+            <TextView
+                android:id="@+id/artistName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:gravity="left|center_vertical"
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                tools:text="Dennis Ferrer"/>
 
             <TextView
                 android:id="@+id/trackTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="@dimen/rhythm_space_single"
-                android:layout_alignParentTop="true"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:gravity="center"
-                android:ellipsize="end"
+                android:layout_below="@+id/artistName"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:gravity="left|center_vertical"
+                android:ellipsize="marquee"
                 android:singleLine="true"
-                tools:text="Dennis Ferrer - I heard you say"/>
+                tools:text="Hey Hey (Df Attention's Remix"/>
+
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:padding="@dimen/rhythm_space_single">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="@dimen/rhythm_space_single"
+            android:paddingBottom="@dimen/rhythm_space_single"
+            android:paddingLeft="@dimen/rhythm_space_double"
+            android:paddingRight="@dimen/rhythm_space_double">
 
             <TextView
                 android:id="@+id/timeElapsed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_above="@+id/playbackControls"
-                android:layout_below="@+id/trackTitle"
+                android:layout_alignBottom="@+id/seekBar"
+                android:layout_alignTop="@+id/seekBar"
+                android:layout_alignLeft="@+id/loadingView"
                 android:gravity="center"
                 android:text="0:00"
                 tools:text="0:00" />
@@ -53,7 +84,7 @@
                 android:id="@+id/seekBar"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/trackTitle"
+                android:layout_alignParentTop="true"
                 android:layout_toLeftOf="@+id/timeTotal"
                 android:layout_toRightOf="@+id/timeElapsed"/>
 
@@ -61,29 +92,37 @@
                 android:id="@+id/timeTotal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:layout_above="@+id/playbackControls"
-                android:layout_below="@+id/trackTitle"
+                android:layout_alignBottom="@+id/seekBar"
+                android:layout_alignTop="@+id/seekBar"
+                android:layout_alignRight="@+id/loadingView"
                 android:gravity="center"
                 tools:text="0:00" />
 
+            <ProgressBar
+                android:id="@+id/loadingView"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/seekBar"
+                android:indeterminate="true"
+                android:layout_marginLeft="@dimen/rhythm_space_half"
+                android:layout_marginRight="@dimen/rhythm_space_half"
+                android:visibility="invisible"/>
+
             <LinearLayout
                 android:id="@+id/playbackControls"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_centerHorizontal="true"
                 android:layout_below="@+id/seekBar"
-                android:layout_marginTop="@dimen/rhythm_space_half"
-                android:paddingLeft="@dimen/rhythm_space_single"
-                android:paddingRight="@dimen/rhythm_space_single"
-                android:paddingBottom="@dimen/rhythm_space_single">
+                android:layout_marginTop="@dimen/rhythm_space_single">
 
                 <ImageButton
                     android:id="@+id/previousButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:contentDescription="@string/description_prev_track"
                     android:src="@android:drawable/ic_media_previous" />
 
@@ -91,6 +130,7 @@
                     android:id="@+id/playButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:contentDescription="@string/description_prev_track"
                     android:src="@android:drawable/ic_media_play" />
 
@@ -98,6 +138,7 @@
                     android:id="@+id/nextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:contentDescription="@string/description_next_track"
                     android:src="@android:drawable/ic_media_next" />
 

@@ -3,60 +3,56 @@ package com.neykov.spotifystreamer.ui;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.neykov.spotifystreamer.R;
+import com.neykov.spotifystreamer.ViewUtils;
 import com.neykov.spotifystreamer.playback.PlaybackInterface;
 import com.neykov.spotifystreamer.playback.PlaybackListener;
 import com.neykov.spotifystreamer.playback.PlaybackService;
 import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import kaaes.spotify.webapi.android.models.ArtistSimple;
 import kaaes.spotify.webapi.android.models.Track;
 
 public class TracksPlaybackFragment extends Fragment implements ActionbarConfigurator, PlaybackListener {
 
-    private static final String ARG_TRACKS = "TracksPlaybackFragment.Tracks";
-    private static final String ARG_START_TRACK = "TracksPlaybackFragment.StartTrack";
     public static final String TAG = TracksPlaybackFragment.class.getSimpleName();
     public static final String TIME_INTERVAL_STRING_FORMAT = "%02d:%02d";
 
-    public static TracksPlaybackFragment newInstance(Track[] tracks, int startTrackNumber){
-        Bundle args = new Bundle();
-        args.putSerializable(ARG_TRACKS, tracks);
-        args.putInt(ARG_START_TRACK, startTrackNumber);
+    public static TracksPlaybackFragment newInstance(){
         TracksPlaybackFragment instance = new TracksPlaybackFragment();
-        instance.setArguments(args);
         return instance;
     }
 
     private PlaybackInterface mPlaybackInterface;
-    private Track[] mTracks;
 
-    private View mPreviousButton;
-    private View mPlayPauseButton;
-    private View mNextButton;
+    private ImageButton mPreviousButton;
+    private ImageButton mPlayPauseButton;
+    private ImageButton mNextButton;
     private SeekBar mSeekBar;
     private TextView mElapsedTextView;
     private TextView mDurationTextView;
+    private TextView mTrackTitleView;
+    private TextView mArtistNameView;
     private ImageView mAlbumArtView;
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mTracks = (Track[]) getArguments().getSerializable(ARG_TRACKS);
-    }
+    private View mLoadingView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -82,11 +78,14 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     private void initializeViewReferences(View rootView){
         mAlbumArtView = (ImageView) rootView.findViewById(R.id.albumArtView);
         mSeekBar = (SeekBar) rootView.findViewById(R.id.seekBar);
-        mPreviousButton = rootView.findViewById(R.id.previousButton);
-        mPlayPauseButton = rootView.findViewById(R.id.playButton);
-        mNextButton = rootView.findViewById(R.id.nextButton);
+        mPreviousButton = (ImageButton) rootView.findViewById(R.id.previousButton);
+        mPlayPauseButton = (ImageButton) rootView.findViewById(R.id.playButton);
+        mNextButton = (ImageButton) rootView.findViewById(R.id.nextButton);
         mElapsedTextView = (TextView) rootView.findViewById(R.id.timeElapsed);
         mDurationTextView = (TextView) rootView.findViewById(R.id.timeTotal);
+        mLoadingView = rootView.findViewById(R.id.loadingView);
+        mTrackTitleView = (TextView) rootView.findViewById(R.id.trackTitle);
+        mArtistNameView = (TextView) rootView.findViewById(R.id.artistName);
     }
 
     private void setEventListeners(){
@@ -96,6 +95,8 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
                 if(mPlaybackInterface != null){
                     mPlaybackInterface.playPrevious();
                 }
+                setElapsedTime(0);
+                setTotalDuration(0);
             }
         });
         mNextButton.setOnClickListener(new View.OnClickListener() {
@@ -104,13 +105,19 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
                 if(mPlaybackInterface != null){
                     mPlaybackInterface.playNext();
                 }
+                setElapsedTime(0);
+                setTotalDuration(0);
             }
         });
         mPlayPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mPlaybackInterface != null) {
-                    mPlaybackInterface.play();
+                    if(mPlaybackInterface.isPlaying()){
+                        mPlaybackInterface.pause();
+                    }else {
+                        mPlaybackInterface.play();
+                    }
                 }
             }
         });
@@ -124,8 +131,20 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
         toggleSeekBar(enabled);
     }
 
+    private void toggleLoadingView(boolean enabled){
+        int visibility = enabled? View.VISIBLE: View.INVISIBLE;
+        mLoadingView.setVisibility(visibility);
+    }
+
     private void toggleSeekBar(boolean available){
         mSeekBar.setEnabled(available);
+    }
+
+    private void togglePlayButtonState(boolean trackIsPlaying){
+        int iconResourse = trackIsPlaying? android.R.drawable.ic_media_play: android.R.drawable.ic_media_pause;
+        Resources.Theme theme = getActivity().getTheme();
+        Drawable iconDrawable = ViewUtils.getDrawable(iconResourse, getResources(), theme);
+        mPlayPauseButton.setImageDrawable(iconDrawable);
     }
 
     private String getLabelForTime(int millis) {
@@ -138,24 +157,20 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
 
     private void detachFromService() {
         togglePlaybackControls(false);
-
-        if(mPlaybackInterface != null && mPlaybackInterface.isPlaying()){
-            mPlaybackInterface.placeGlobalControls();
-            getActivity().unbindService(mConnection);
-        }else{
-            Intent serviceIntent = new Intent(getActivity(), PlaybackService.class);
-            getActivity().stopService(serviceIntent);
+        if (mPlaybackInterface != null) {
+            mPlaybackInterface.setPlaybackListener(null);
+            if (mPlaybackInterface.isActive()) {
+                mPlaybackInterface.placeGlobalControls();
+                getActivity().unbindService(mConnection);
+            } else {
+                Intent serviceIntent = new Intent(getActivity(), PlaybackService.class);
+                getActivity().stopService(serviceIntent);
+            }
         }
     }
 
     private void connectToService() {
         togglePlaybackControls(false);
-
-        Intent serviceIntent = new Intent(getActivity(), PlaybackService.class)
-                .setAction(PlaybackService.ACTION_SET_TRACKS)
-                .putExtra(PlaybackService.EXTRA_TRACKLIST, mTracks);
-        getActivity().startService(serviceIntent);
-
         Intent bindIntent = new Intent(getActivity(), PlaybackService.class);
         getActivity().bindService(bindIntent, mConnection, 0);
     }
@@ -164,10 +179,10 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
         Picasso instance = Picasso.with(getActivity().getApplicationContext());
         instance.cancelRequest(mAlbumArtView);
 
-        if(track.album.images != null && track.album.images.isEmpty()){
+        if(track.album.images != null && !track.album.images.isEmpty()){
             instance.load(track.album.images.get(0).url)
                     .fit()
-                    .centerInside()
+                    .centerCrop()
                     .placeholder(R.drawable.ic_av_equalizer)
                     .error( R.drawable.ic_av_equalizer)
                     .into(mAlbumArtView);
@@ -200,32 +215,51 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     @Override
     public void onLoadStart() {
         toggleSeekBar(false);
+        toggleLoadingView(true);
     }
 
     @Override
     public void onPositionUpdate(int currentPosMs, int totalLengthMs) {
-        if(currentPosMs != mSeekBar.getProgress()){
-            mElapsedTextView.setText(getLabelForTime(currentPosMs));
-            mSeekBar.setProgress(currentPosMs);
-        }
-
-        if(totalLengthMs != mSeekBar.getMax()) {
-            mDurationTextView.setText(getLabelForTime(totalLengthMs));
-            mSeekBar.setMax(totalLengthMs);
-        }
-
+        setElapsedTime(currentPosMs);
+        setTotalDuration(totalLengthMs);
         toggleSeekBar(true);
+    }
+
+    private void setTotalDuration(int durationMillis) {
+        if(durationMillis != mSeekBar.getMax()) {
+            mDurationTextView.setText(getLabelForTime(durationMillis));
+            mSeekBar.setMax(durationMillis);
+        }
+    }
+
+    private void setElapsedTime(int elapsedTimeMillis) {
+        if(elapsedTimeMillis != mSeekBar.getProgress()){
+            mElapsedTextView.setText(getLabelForTime(elapsedTimeMillis));
+            mSeekBar.setProgress(elapsedTimeMillis);
+        }
     }
 
     @Override
     public void onLoadDone() {
         toggleSeekBar(true);
+        toggleLoadingView(false);
     }
 
     @Override
     public void onError() {
         toggleSeekBar(false);
+        toggleLoadingView(false);
+    }
 
+    @Override
+    public void onTrackChanged(Track currentTrack) {
+        loadTrackImage(currentTrack);
+        setTrackNameLabels(currentTrack);
+    }
+
+    @Override
+    public void onPlaybackStateChanged(boolean running) {
+        togglePlayButtonState(running);
     }
 
     private final SeekBar.OnSeekBarChangeListener mSeеkChangeListener = new SeekBar.OnSeekBarChangeListener() {
@@ -243,7 +277,6 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
             if(mPlaybackInterface != null){
                 mPlaybackInterface.seekToPosition(seekBar.getProgress());
             }
-
             mElapsedTextView.setText(getLabelForTime(seekBar.getProgress()));
         }
     };
@@ -256,7 +289,9 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
             mPlaybackInterface.setPlaybackListener(TracksPlaybackFragment.this);
             if(getView() != null){
                 togglePlaybackControls(true);
-                loadTrackImage(mPlaybackInterface.getCurrentTrack());
+                Track currentTrack = mPlaybackInterface.getCurrentTrack();
+                loadTrackImage(currentTrack);
+                setTrackNameLabels(currentTrack);
             }
         }
 
@@ -268,4 +303,24 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
             mPlaybackInterface = null;
         }
     };
+
+    private void setTrackNameLabels(Track currentTrack) {
+        StringBuilder nameBuilder = new StringBuilder();
+        List<ArtistSimple> artists = currentTrack.artists;
+        if(artists.size() == 1){
+            nameBuilder.append(artists.get(0).name);
+        }else{
+            int currentArtist = 0;
+            while (currentArtist < artists.size()){
+                nameBuilder.append(artists.get(currentArtist).name);
+                if(currentArtist < artists.size() - 1) {
+                    nameBuilder.append(", ");
+                }
+                currentArtist++;
+            }
+        }
+
+        mArtistNameView.setText(nameBuilder.toString());
+        mTrackTitleView.setText(currentTrack.name);
+    }
 }

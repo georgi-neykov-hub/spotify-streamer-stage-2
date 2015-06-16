@@ -10,12 +10,11 @@ public interface PlaybackInterface {
     void playPrevious();
     void seekToPosition(int positionMillis);
 
-    void setCurrentTrack(int trackNumber);
-    void setTracklist(Track[] tracklist);
     void placeGlobalControls();
 
     Track getCurrentTrack();
     boolean isPlaying();
+    boolean isActive();
 
     void setPlaybackListener(PlaybackListener listener);
 }

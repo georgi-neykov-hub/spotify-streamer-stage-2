@@ -59,6 +59,7 @@ class TracklistHandler {
         mTracklist.clear();
         mTracklist.addAll(Arrays.asList(tracks));
         mCurrentTrack = getTrack(0);
+        mCurrentTrackNumber = 0;
     }
 
     protected Track getTrack(int number) {
@@ -68,5 +69,9 @@ class TracklistHandler {
     public void setCurrentTrack(int number) {
         mCurrentTrack = getTrack(number);
         mCurrentTrackNumber = number;
+    }
+
+    public int getCurrentTrackNumber() {
+        return mCurrentTrackNumber;
     }
 }

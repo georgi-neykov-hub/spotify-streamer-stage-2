@@ -8,6 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.neykov.spotifystreamer.R;
+import com.neykov.spotifystreamer.playback.PlaybackService;
 import com.neykov.spotifystreamer.ui.base.ActionBarConfigurable;
 import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 
@@ -88,8 +89,15 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
 
     @Override
     public void onTrackSelected(int trackNumber, Track[] tracks) {
-        TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance(
-                tracks, trackNumber);
+        //Start the playback service, providing the tracklist.
+        Intent serviceIntent = new Intent(this, PlaybackService.class)
+                .setAction(PlaybackService.ACTION_SET_TRACKS)
+                .putExtra(PlaybackService.EXTRA_TRACKLIST, tracks)
+                .putExtra(PlaybackService.EXTRA_TRACK_TO_PLAY, trackNumber);
+        this.startService(serviceIntent);
+
+        //Start the playback fragment that visualizes the service controls
+        TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance();
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.content_frame, fragment, TracksPlaybackFragment.TAG)
                 .addToBackStack(TracksPlaybackFragment.TAG)

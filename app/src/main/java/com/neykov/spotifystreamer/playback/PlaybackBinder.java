@@ -13,11 +13,6 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     }
 
     @Override
-    public void setTracklist(Track[] tracklist) {
-        mService.setTracklist(tracklist);
-    }
-
-    @Override
     public void placeGlobalControls() {
         mService.placeGlobalControls();
     }
@@ -34,7 +29,7 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
 
     @Override
     public void playNext() {
-        mService.pause();
+        mService.playNext();
     }
 
     @Override
@@ -48,11 +43,6 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     }
 
     @Override
-    public void setCurrentTrack(int trackNumber) {
-        mService.setCurrentTrack(trackNumber);
-    }
-
-    @Override
     public Track getCurrentTrack() {
         return mService.getCurrentTrack();
     }
@@ -60,6 +50,11 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     @Override
     public boolean isPlaying() {
         return mService.isPlaying();
+    }
+
+    @Override
+    public boolean isActive() {
+        return mService.isActive();
     }
 
     @Override
