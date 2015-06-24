@@ -2,4 +2,5 @@
 <resources>
     <string name="description_prev_track">Previous track</string>
     <string name="description_next_track">Next Track</string>
+    <string name="description_play_pause_track">Play/Pause Track</string>
 </resources>

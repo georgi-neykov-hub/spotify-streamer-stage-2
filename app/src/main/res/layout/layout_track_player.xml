@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,12 +8,6 @@
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin">
-
-    <ImageView
-        android:id="@+id/albumArtView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:src="@drawable/ic_av_equalizer"/>
 
     <android.support.v7.widget.CardView
         android:layout_width="match_parent"
@@ -53,6 +47,16 @@
 
         </RelativeLayout>
     </android.support.v7.widget.CardView>
+
+    <com.neykov.spotifystreamer.ui.SquareImageView
+        android:id="@+id/albumArtView"
+        android:layout_width="match_parent"
+        android:layout_gravity="center_horizontal"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="@dimen/rhythm_space_double"
+        android:layout_marginBottom="@dimen/rhythm_space_double"
+        tools:src="@drawable/ic_av_equalizer"/>
 
     <android.support.v7.widget.CardView
         android:layout_width="match_parent"
@@ -106,8 +110,7 @@
                 android:layout_below="@+id/seekBar"
                 android:indeterminate="true"
                 android:layout_marginLeft="@dimen/rhythm_space_half"
-                android:layout_marginRight="@dimen/rhythm_space_half"
-                android:visibility="invisible"/>
+                android:layout_marginRight="@dimen/rhythm_space_half" />
 
             <LinearLayout
                 android:id="@+id/playbackControls"
@@ -124,15 +127,15 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:contentDescription="@string/description_prev_track"
-                    android:src="@android:drawable/ic_media_previous" />
+                    android:src="@drawable/ic_playback_previous" />
 
                 <ImageButton
                     android:id="@+id/playButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:contentDescription="@string/description_prev_track"
-                    android:src="@android:drawable/ic_media_play" />
+                    android:contentDescription="@string/description_play_pause_track"
+                    android:src="@drawable/ic_playback_play" />
 
                 <ImageButton
                     android:id="@+id/nextButton"
@@ -140,7 +143,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:contentDescription="@string/description_next_track"
-                    android:src="@android:drawable/ic_media_next" />
+                    android:src="@drawable/ic_playback_next" />
 
             </LinearLayout>
 
@@ -148,4 +151,4 @@
 
     </android.support.v7.widget.CardView>
 
-</FrameLayout>
+</LinearLayout>
