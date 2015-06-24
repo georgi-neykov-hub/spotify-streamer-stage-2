@@ -13,8 +13,13 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     }
 
     @Override
-    public void placeGlobalControls() {
-        mService.placeGlobalControls();
+    public void placeNotificationControls() {
+        mService.placeNotificationControls();
+    }
+
+    @Override
+    public void removeNotificationControls() {
+        mService.removeNotificationControls();
     }
 
     @Override
@@ -48,6 +53,16 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     }
 
     @Override
+    public int getCurrentPosition() {
+        return mService.getCurrentPosition();
+    }
+
+    @Override
+    public int getDuration() {
+        return mService.getDuration();
+    }
+
+    @Override
     public boolean isPlaying() {
         return mService.isPlaying();
     }
@@ -55,6 +70,11 @@ public class PlaybackBinder extends Binder implements PlaybackInterface {
     @Override
     public boolean isActive() {
         return mService.isActive();
+    }
+
+    @Override
+    public boolean isLoading() {
+        return mService.isLoading();
     }
 
     @Override

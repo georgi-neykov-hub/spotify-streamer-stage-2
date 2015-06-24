@@ -32,12 +32,13 @@ import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 
 /**
- * A simple {@link Fragment} subclass.
+ * Fragment for querying and displaying a list with the top 10 tracks for an
+ * {@link Artist}
  */
 public class ArtistTopTracksFragment extends BaseFragment {
 
     public interface OnTrackSelectedListener{
-        void onTrackSelected(int trackNumber, Track[] tracks);
+        void onTrackSelected(int trackNumber, Track[] tracks, Artist artist);
     }
 
     public static String TAG = ArtistTopTracksFragment.class.getSimpleName();
@@ -242,7 +243,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
         @Override
         public void onItemSelected(int position, Track item) {
             if(mListener != null){
-                mListener.onTrackSelected(position, mTracksQueryResult);
+                mListener.onTrackSelected(position, mTracksQueryResult, mArtist);
             }
         }
     };

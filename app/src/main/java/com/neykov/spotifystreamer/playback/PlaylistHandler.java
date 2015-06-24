@@ -6,17 +6,14 @@ import java.util.List;
 
 import kaaes.spotify.webapi.android.models.Track;
 
-/**
- * Created by Georgi on 15.6.2015 г..
- */
-class TracklistHandler {
+class PlaylistHandler {
 
-    private List<Track> mTracklist;
+    private List<Track> mPlaylist;
     private Track mCurrentTrack;
     private int mCurrentTrackNumber;
 
-    public TracklistHandler() {
-        mTracklist = new ArrayList<>();
+    public PlaylistHandler() {
+        mPlaylist = new ArrayList<>();
     }
 
     public  boolean hasPrevious() {
@@ -24,7 +21,7 @@ class TracklistHandler {
     }
 
     protected boolean hasNext() {
-        return mCurrentTrackNumber < (mTracklist.size() - 1);
+        return mCurrentTrackNumber < (mPlaylist.size() - 1);
     }
 
     protected Track moveToPrevious() {
@@ -44,26 +41,26 @@ class TracklistHandler {
     }
 
     protected int getTrackCount() {
-        return mTracklist.size();
+        return mPlaylist.size();
     }
 
     protected Track getCurrentTrack() {
         return mCurrentTrack;
     }
 
-    protected void setTrackslist(Track[] tracks) {
+    protected void setPlaylist(Track[] tracks) {
         if (tracks.length == 0) {
             throw new IllegalArgumentException("No tracks provided, length = 0");
         }
 
-        mTracklist.clear();
-        mTracklist.addAll(Arrays.asList(tracks));
+        mPlaylist.clear();
+        mPlaylist.addAll(Arrays.asList(tracks));
         mCurrentTrack = getTrack(0);
         mCurrentTrackNumber = 0;
     }
 
     protected Track getTrack(int number) {
-        return mTracklist.get(number);
+        return mPlaylist.get(number);
     }
 
     public void setCurrentTrack(int number) {

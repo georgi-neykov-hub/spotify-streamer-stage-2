@@ -1,5 +1,6 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,6 +28,10 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, ArtistListFragment.newInstance(), ArtistListFragment.TAG)
                     .commit();
+
+            if(PlaybackService.ACTION_SHOW_PLAYBACK_CONTROLS.equals(getIntent().getAction())){
+                handleShowPlaybackAction(getIntent());
+            }
         }
     }
 
@@ -74,6 +79,26 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
         this.setSupportActionBar(toolbar);
     }
 
+    private void handleShowPlaybackAction(Intent intent){
+        Artist artist = (Artist) intent.getSerializableExtra(PlaybackService.EXTRA_ARTIST);
+        if(artist == null){
+            throw new IllegalArgumentException("No "+ PlaybackService.EXTRA_ARTIST +" extra provided.");
+        }
+
+        //Restore the back stack;
+        ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(artist);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
+                .addToBackStack(ArtistTopTracksFragment.TAG)
+                .commit();
+
+        TracksPlaybackFragment playbackFragment = TracksPlaybackFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, playbackFragment, TracksPlaybackFragment.TAG)
+                .addToBackStack(TracksPlaybackFragment.TAG)
+                .commit();
+    }
+
     @Override
     public void onArtistSelected(Artist artist) {
         ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(artist);
@@ -88,12 +113,15 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
     }
 
     @Override
-    public void onTrackSelected(int trackNumber, Track[] tracks) {
-        //Start the playback service, providing the tracklist.
+    public void onTrackSelected(int trackNumber, Track[] tracks, Artist artist) {
+        //Start the playback service, providing the playlist & target artist.
+
         Intent serviceIntent = new Intent(this, PlaybackService.class)
-                .setAction(PlaybackService.ACTION_SET_TRACKS)
-                .putExtra(PlaybackService.EXTRA_TRACKLIST, tracks)
-                .putExtra(PlaybackService.EXTRA_TRACK_TO_PLAY, trackNumber);
+                .setAction(PlaybackService.ACTION_SET_PLAYLIST)
+                .putExtra(PlaybackService.EXTRA_PLAYLIST, tracks)
+                .putExtra(PlaybackService.EXTRA_ARTIST, artist)
+                .putExtra(PlaybackService.EXTRA_TRACK_TO_PLAY, trackNumber)
+                .putExtra(PlaybackService.EXTRA_NOTIFICATION_HANDLER, new ComponentName(this, MainActivity.class));
         this.startService(serviceIntent);
 
         //Start the playback fragment that visualizes the service controls

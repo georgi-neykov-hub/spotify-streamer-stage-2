@@ -5,10 +5,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +17,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.neykov.spotifystreamer.R;
+import com.neykov.spotifystreamer.TrackUtils;
 import com.neykov.spotifystreamer.ViewUtils;
 import com.neykov.spotifystreamer.playback.PlaybackInterface;
 import com.neykov.spotifystreamer.playback.PlaybackListener;
@@ -25,13 +25,11 @@ import com.neykov.spotifystreamer.playback.PlaybackService;
 import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 import com.squareup.picasso.Picasso;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import kaaes.spotify.webapi.android.models.ArtistSimple;
 import kaaes.spotify.webapi.android.models.Track;
 
-public class TracksPlaybackFragment extends Fragment implements ActionbarConfigurator, PlaybackListener {
+public class TracksPlaybackFragment extends DialogFragment implements ActionbarConfigurator, PlaybackListener {
 
     public static final String TAG = TracksPlaybackFragment.class.getSimpleName();
     public static final String TIME_INTERVAL_STRING_FORMAT = "%02d:%02d";
@@ -64,14 +62,14 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
+    public void onResume() {
+        super.onResume();
         connectToService();
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onPause() {
+        super.onPause();
         detachFromService();
     }
 
@@ -95,8 +93,6 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
                 if(mPlaybackInterface != null){
                     mPlaybackInterface.playPrevious();
                 }
-                setElapsedTime(0);
-                setTotalDuration(0);
             }
         });
         mNextButton.setOnClickListener(new View.OnClickListener() {
@@ -105,8 +101,6 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
                 if(mPlaybackInterface != null){
                     mPlaybackInterface.playNext();
                 }
-                setElapsedTime(0);
-                setTotalDuration(0);
             }
         });
         mPlayPauseButton.setOnClickListener(new View.OnClickListener() {
@@ -141,9 +135,9 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     }
 
     private void togglePlayButtonState(boolean trackIsPlaying){
-        int iconResourse = trackIsPlaying? android.R.drawable.ic_media_play: android.R.drawable.ic_media_pause;
+        int iconResource = trackIsPlaying? R.drawable.ic_playback_pause : R.drawable.ic_playback_play;
         Resources.Theme theme = getActivity().getTheme();
-        Drawable iconDrawable = ViewUtils.getDrawable(iconResourse, getResources(), theme);
+        Drawable iconDrawable = ViewUtils.getDrawable(iconResource, getResources(), theme);
         mPlayPauseButton.setImageDrawable(iconDrawable);
     }
 
@@ -160,7 +154,7 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
         if (mPlaybackInterface != null) {
             mPlaybackInterface.setPlaybackListener(null);
             if (mPlaybackInterface.isActive()) {
-                mPlaybackInterface.placeGlobalControls();
+                mPlaybackInterface.placeNotificationControls();
                 getActivity().unbindService(mConnection);
             } else {
                 Intent serviceIntent = new Intent(getActivity(), PlaybackService.class);
@@ -243,6 +237,7 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     public void onLoadDone() {
         toggleSeekBar(true);
         toggleLoadingView(false);
+        togglePlaybackControls(true);
     }
 
     @Override
@@ -255,6 +250,9 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     public void onTrackChanged(Track currentTrack) {
         loadTrackImage(currentTrack);
         setTrackNameLabels(currentTrack);
+        setElapsedTime(0);
+        setTotalDuration(0);
+        toggleSeekBar(false);
     }
 
     @Override
@@ -288,11 +286,17 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
             mPlaybackInterface = (PlaybackInterface) service;
             mPlaybackInterface.setPlaybackListener(TracksPlaybackFragment.this);
             if(getView() != null){
-                togglePlaybackControls(true);
                 Track currentTrack = mPlaybackInterface.getCurrentTrack();
                 loadTrackImage(currentTrack);
                 setTrackNameLabels(currentTrack);
+                togglePlaybackControls(!mPlaybackInterface.isLoading());
+                togglePlayButtonState(mPlaybackInterface.isPlaying());
+                toggleLoadingView(mPlaybackInterface.isLoading());
+                setElapsedTime(mPlaybackInterface.getCurrentPosition());
+                setTotalDuration(mPlaybackInterface.getDuration());
             }
+
+            mPlaybackInterface.removeNotificationControls();
         }
 
         @Override
@@ -305,22 +309,7 @@ public class TracksPlaybackFragment extends Fragment implements ActionbarConfigu
     };
 
     private void setTrackNameLabels(Track currentTrack) {
-        StringBuilder nameBuilder = new StringBuilder();
-        List<ArtistSimple> artists = currentTrack.artists;
-        if(artists.size() == 1){
-            nameBuilder.append(artists.get(0).name);
-        }else{
-            int currentArtist = 0;
-            while (currentArtist < artists.size()){
-                nameBuilder.append(artists.get(currentArtist).name);
-                if(currentArtist < artists.size() - 1) {
-                    nameBuilder.append(", ");
-                }
-                currentArtist++;
-            }
-        }
-
-        mArtistNameView.setText(nameBuilder.toString());
+        mArtistNameView.setText(TrackUtils.getArtistString(currentTrack));
         mTrackTitleView.setText(currentTrack.name);
     }
 }
