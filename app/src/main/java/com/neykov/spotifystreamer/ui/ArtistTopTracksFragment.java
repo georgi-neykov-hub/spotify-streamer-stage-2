@@ -5,7 +5,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -46,7 +45,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
     private static final String ARG_ARTIST = "ArtistTopTracksFragment.Artist";
     private static final String KEY_LAYOUT_MANAGER_STATE = "ArtistTopTracksFragment.LayoutManagerState";
     private static final String KEY_ADAPTER_STATE = "ArtistTopTracksFragment.TracksAdapterState";
-    private static final String ARG_QUERY_COUNTRYCODE_STRING = "ArtistTopTracksFragment.Query.CountryCode";
+    private static final String ARG_QUERY_COUNTRY_CODE_STRING = "ArtistTopTracksFragment.Query.CountryCode";
 
     private static final int QUERY_LOADER_ID = (TAG + ".LoaderID").hashCode();
 
@@ -95,10 +94,21 @@ public class ArtistTopTracksFragment extends BaseFragment {
 
         mTracksAdapter = new TracksAdapter();
         mTracksAdapter.setOnItemSelectedListener(mItemSelectedListener);
+
         if (savedInstanceState != null) {
             Parcelable arrayData = savedInstanceState.getParcelable(KEY_ADAPTER_STATE);
             mTracksAdapter.onRestoreInstanceState(arrayData);
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if(mLayoutManager != null) {
+            outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
+        }
+
+        outState.putParcelable(KEY_ADAPTER_STATE, mTracksAdapter.onSaveInstanceState());
     }
 
     @Override
@@ -108,6 +118,14 @@ public class ArtistTopTracksFragment extends BaseFragment {
         configureRecyclerView(savedInstanceState);
         setEventListeners();
         return rootView;
+    }
+
+    @Override
+    public void onDestroyView() {
+        mSwipeRefreshLayout = null;
+        mLayoutManager = null;
+        mTracksRecyclerView = null;
+        super.onDestroyView();
     }
 
     @Override
@@ -151,11 +169,11 @@ public class ArtistTopTracksFragment extends BaseFragment {
         });
     }
 
-    private void configureRecyclerView(Bundle savedState) {
+    private void configureRecyclerView(Bundle savedInstanceState) {
         mLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
-        if (savedState != null) {
-            Parcelable state = savedState.getParcelable(KEY_LAYOUT_MANAGER_STATE);
-            mLayoutManager.onRestoreInstanceState(state);
+        if(savedInstanceState != null){
+            Parcelable ListState = savedInstanceState.getParcelable(KEY_LAYOUT_MANAGER_STATE);
+            mLayoutManager.onRestoreInstanceState(ListState);
         }
 
         mTracksRecyclerView.setLayoutManager(mLayoutManager);
@@ -178,7 +196,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
                 .getString(PreferenceConstants.KEY_PREFFERED_COUNTRY, PreferenceConstants.PREFFERED_COUNTRY_DEFAULT_VALUE);
 
         Bundle args = new Bundle();
-        args.putString(ARG_QUERY_COUNTRYCODE_STRING, countryCode);
+        args.putString(ARG_QUERY_COUNTRY_CODE_STRING, countryCode);
         getLoaderManager().restartLoader(QUERY_LOADER_ID, args, mQueryCallbacks).forceLoad();
     }
 
@@ -198,9 +216,8 @@ public class ArtistTopTracksFragment extends BaseFragment {
 
         @Override
         public Loader<NetworkResult<Tracks>> onCreateLoader(int id, Bundle args) {
-            String countryCode = args.getString(ARG_QUERY_COUNTRYCODE_STRING);
-            ArtistTracksQueryLoader loader = new ArtistTracksQueryLoader(getActivity(),mApiService, mArtist, countryCode);
-            return loader;
+            String countryCode = args.getString(ARG_QUERY_COUNTRY_CODE_STRING);
+            return new ArtistTracksQueryLoader(getActivity(),mApiService, mArtist, countryCode);
         }
 
         @Override
@@ -217,7 +234,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
 
         @Override
         public void onLoaderReset(Loader<NetworkResult<Tracks>> loader) {
-            mSwipeRefreshLayout.setRefreshing(true);
+            mTracksAdapter.clearItems();
         }
     };
 

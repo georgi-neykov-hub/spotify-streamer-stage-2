@@ -102,7 +102,9 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
+        if(mLayoutManager!= null) {
+            outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
+        }
         outState.putParcelable(KEY_ADAPTER_STATE, mArtistAdapter.onSaveInstanceState());
     }
 
@@ -113,6 +115,14 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
         configureRecyclerView(savedInstanceState);
         setEventListeners();
         return rootView;
+    }
+
+    @Override
+    public void onDestroyView() {
+        mArtistsRecyclerView = null;
+        mLayoutManager = null;
+        mSearchView = null;
+        super.onDestroyView();
     }
 
     @Override
@@ -132,10 +142,10 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
         mSearchView = (SearchView) rootView.findViewById(R.id.searchView);
     }
 
-    private void configureRecyclerView(Bundle savedState) {
+    private void configureRecyclerView(Bundle savedInstanceState) {
         mLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
-        if (savedState != null) {
-            Parcelable state = savedState.getParcelable(KEY_LAYOUT_MANAGER_STATE);
+        if (savedInstanceState != null) {
+            Parcelable state = savedInstanceState.getParcelable(KEY_LAYOUT_MANAGER_STATE);
             mLayoutManager.onRestoreInstanceState(state);
         }
 
@@ -174,7 +184,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
 
     private void executeArtistQuery(String query) {
         Bundle args = new Bundle();
-        args.putString(ARG_QUERY_STRING, query);
+        args.putString(ARG_QUERY_STRING, query + "*");
         getLoaderManager().restartLoader(QUERY_LOADER_ID, args, mQueryCallbacks).forceLoad();
     }
 
@@ -201,8 +211,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
         @Override
         public Loader<NetworkResult<ArtistsPager>> onCreateLoader(int id, Bundle args) {
             String query = args.getString(ARG_QUERY_STRING);
-            ArtistQueryLoader loader = new ArtistQueryLoader(getActivity(), mApiService, query);
-            return loader;
+            return new ArtistQueryLoader(getActivity(), mApiService, query);
         }
 
         @Override
@@ -222,7 +231,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
 
         @Override
         public void onLoaderReset(Loader<NetworkResult<ArtistsPager>> loader) {
-
+            mArtistAdapter.clearItems();
         }
     };
 }
