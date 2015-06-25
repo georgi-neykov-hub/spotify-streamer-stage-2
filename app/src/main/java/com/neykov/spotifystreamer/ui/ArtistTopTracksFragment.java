@@ -24,6 +24,7 @@ import com.neykov.spotifystreamer.networking.ArtistTracksQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
 import com.neykov.spotifystreamer.ui.base.BaseFragment;
 
+import java.util.Arrays;
 import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -70,7 +71,6 @@ public class ArtistTopTracksFragment extends BaseFragment {
     private RecyclerView mTracksRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
 
-    private Track[] mTracksQueryResult;
     private OnTrackSelectedListener mListener;
 
     @Override
@@ -108,7 +108,6 @@ public class ArtistTopTracksFragment extends BaseFragment {
         if(mLayoutManager != null) {
             outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
         }
-
         outState.putParcelable(KEY_ADAPTER_STATE, mTracksAdapter.onSaveInstanceState());
     }
 
@@ -226,7 +225,6 @@ public class ArtistTopTracksFragment extends BaseFragment {
             mSwipeRefreshLayout.setRefreshing(false);
             if (data.isSuccessful()) {
                 List<Track> trackList = data.getResponse().tracks;
-                mTracksQueryResult = trackList.toArray(new Track[trackList.size()]);
                 mTracksAdapter.setItems(trackList);
             } else {
                 showQueryErrorMessage();
@@ -243,7 +241,9 @@ public class ArtistTopTracksFragment extends BaseFragment {
         @Override
         public void onItemSelected(int position, Track item) {
             if(mListener != null){
-                mListener.onTrackSelected(position, mTracksQueryResult, mArtist);
+                List<Track> adapterItems = mTracksAdapter.getItems();
+                Track[] playlist = adapterItems.toArray(new Track[adapterItems.size()]);
+                mListener.onTrackSelected(position, playlist, mArtist);
             }
         }
     };

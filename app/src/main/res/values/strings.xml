@@ -17,5 +17,8 @@
     <string name="label_play">Play</string>
     <string name="label_pause">Pause</string>
     <string name="label_next">Next</string>
+    <string name="label_share">Share</string>
+    <string name="label_now_playing">Now Playing</string>
+    <string name="title_tracks">Tracks</string>
 
 </resources>

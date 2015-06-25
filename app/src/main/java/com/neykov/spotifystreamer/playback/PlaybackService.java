@@ -21,6 +21,8 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Objects;
 
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Track;
@@ -114,7 +116,8 @@ public class PlaybackService extends Service implements PlaybackInterface {
             throw new IllegalArgumentException("No "+ EXTRA_ARTIST +" extra provided.");
         }
 
-        Track[] playlist = (Track[]) intent.getSerializableExtra(EXTRA_PLAYLIST);
+        Object[] objectArray = (Object[]) intent.getSerializableExtra(EXTRA_PLAYLIST);
+        Track[] playlist = Arrays.copyOf(objectArray, objectArray.length, Track[].class);
         if (playlist == null) {
             throw new IllegalArgumentException("Null tracks array provided.");
         } else if (playlist.length == 0) {
@@ -222,7 +225,6 @@ public class PlaybackService extends Service implements PlaybackInterface {
     private NotificationCompat.Builder createNotificationBuilder(){
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-
 
         builder.setSmallIcon(R.drawable.ic_av_equalizer)
                 .setShowWhen(false)

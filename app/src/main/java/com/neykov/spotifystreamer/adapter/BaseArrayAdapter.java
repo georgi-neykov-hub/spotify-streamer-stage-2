@@ -6,7 +6,10 @@ import android.support.v7.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import kaaes.spotify.webapi.android.models.Track;
 
 public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH>{
 
@@ -59,6 +62,10 @@ public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> ex
     public void clearItems() {
         this.mItems.clear();
         this.notifyDataSetChanged();
+    }
+
+    public List<T> getItems() {
+        return Collections.unmodifiableList(mItems);
     }
 
     protected T getItemAt(int position) {

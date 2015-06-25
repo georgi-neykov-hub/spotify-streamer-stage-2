@@ -11,6 +11,8 @@ import android.widget.TextView;
 import com.neykov.spotifystreamer.R;
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 import kaaes.spotify.webapi.android.models.Track;
 
 public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackViewHolder> {
@@ -30,7 +32,6 @@ public class TracksAdapter extends BaseArrayAdapter<Track, TracksAdapter.TrackVi
     public void onBindViewHolder(TrackViewHolder holder, int position) {
         holder.onBind(getItemAt(position));
     }
-
 
     public class TrackViewHolder extends RecyclerView.ViewHolder {
 

@@ -1,5 +1,6 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -8,7 +9,12 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -22,6 +28,7 @@ import com.neykov.spotifystreamer.ViewUtils;
 import com.neykov.spotifystreamer.playback.PlaybackInterface;
 import com.neykov.spotifystreamer.playback.PlaybackListener;
 import com.neykov.spotifystreamer.playback.PlaybackService;
+import com.neykov.spotifystreamer.ui.base.ActionBarConfigurable;
 import com.neykov.spotifystreamer.ui.base.ActionbarConfigurator;
 import com.squareup.picasso.Picasso;
 
@@ -40,6 +47,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     }
 
     private PlaybackInterface mPlaybackInterface;
+    private ShareActionProvider mShareActionProvider;
 
     private ImageButton mPreviousButton;
     private ImageButton mPlayPauseButton;
@@ -53,6 +61,21 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     private View mLoadingView;
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        Activity activity = getActivity();
+        if(activity instanceof ActionBarConfigurable && !getShowsDialog()){
+            ((ActionBarConfigurable)activity).onApplyConfiguratorOptions(this);
+        }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.layout_track_player, container, false);
         initializeViewReferences(rootView);
@@ -62,14 +85,22 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.menu_track_player, menu);
+        MenuItem item = menu.findItem(R.id.action_share_track);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         connectToService();
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
+        super.onStop();
         detachFromService();
     }
 
@@ -153,14 +184,14 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         togglePlaybackControls(false);
         if (mPlaybackInterface != null) {
             mPlaybackInterface.setPlaybackListener(null);
-            if (mPlaybackInterface.isActive()) {
+            if (mPlaybackInterface.isPlaying() || mPlaybackInterface.isLoading()) {
                 mPlaybackInterface.placeNotificationControls();
-                getActivity().unbindService(mConnection);
             } else {
                 Intent serviceIntent = new Intent(getActivity(), PlaybackService.class);
                 getActivity().stopService(serviceIntent);
             }
         }
+        getActivity().unbindService(mConnection);
     }
 
     private void connectToService() {
@@ -186,6 +217,16 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         }
     }
 
+    private void setShareIntent(Track track){
+        if(mShareActionProvider != null){
+            Intent shareIntent = new Intent()
+                    .setAction(Intent.ACTION_SEND)
+                    .putExtra(Intent.EXTRA_TEXT, track.href)
+                    .setType("text/plain");
+            mShareActionProvider.setShareIntent(shareIntent);
+        }
+    }
+
     @Override
     public boolean hasBackNavigation() {
         return true;
@@ -193,12 +234,12 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
 
     @Override
     public boolean hasScreenTitle() {
-        return false;
+        return true;
     }
 
     @Override
     public String getScreenTitle() {
-        return null;
+        return getString(R.string.title_tracks);
     }
 
     @Override
@@ -253,6 +294,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         setElapsedTime(0);
         setTotalDuration(0);
         toggleSeekBar(false);
+        setShareIntent(currentTrack);
     }
 
     @Override
@@ -294,6 +336,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
                 toggleLoadingView(mPlaybackInterface.isLoading());
                 setElapsedTime(mPlaybackInterface.getCurrentPosition());
                 setTotalDuration(mPlaybackInterface.getDuration());
+                setShareIntent(currentTrack);
             }
 
             mPlaybackInterface.removeNotificationControls();
