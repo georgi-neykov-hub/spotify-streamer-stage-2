@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/controlsContainer"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="@dimen/rhythm_space_double"
+        android:orientation="horizontal">
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/artworkContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/rhythm_space_double"
+            android:layout_marginRight="@dimen/rhythm_space_double">
+
+            <com.neykov.spotifystreamer.ui.SquareImageView
+                android:id="@+id/albumArtView"
+                android:layout_width="320dp"
+                android:layout_height="match_parent"
+                tools:src="@drawable/ic_av_equalizer" />
+
+            <ProgressBar
+                android:id="@+id/loadingView"
+                style="@style/Widget.AppCompat.ProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true" />
+
+        </android.support.v7.widget.CardView>
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/trackInfoContainer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:animateLayoutChanges="true"
+                android:paddingBottom="@dimen/rhythm_space_single"
+                android:paddingLeft="@dimen/rhythm_space_double"
+                android:paddingRight="@dimen/rhythm_space_double"
+                android:paddingTop="@dimen/rhythm_space_single">
+
+                <TextView
+                    android:id="@+id/artistName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:ellipsize="marquee"
+                    android:gravity="left|center_vertical"
+                    android:singleLine="true"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:textStyle="bold"
+                    tools:text="Dennis Ferrer" />
+
+                <TextView
+                    android:id="@+id/trackTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/artistName"
+                    android:ellipsize="marquee"
+                    android:gravity="left|center_vertical"
+                    android:singleLine="true"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    tools:text="Hey Hey (Df Attention's Remix" />
+
+            </RelativeLayout>
+        </android.support.v7.widget.CardView>
+
+
+    </LinearLayout>
+
+    <android.support.v7.widget.CardView
+        android:id="@+id/controlsContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom|center_horizontal">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="@dimen/rhythm_space_single"
+            android:paddingLeft="@dimen/rhythm_space_double"
+            android:paddingRight="@dimen/rhythm_space_double"
+            android:paddingTop="@dimen/rhythm_space_single">
+
+            <TextView
+                android:id="@+id/timeElapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/seekBar"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignTop="@+id/seekBar"
+                android:gravity="center"
+                tools:text="0:00" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_toLeftOf="@+id/timeTotal"
+                android:layout_toRightOf="@+id/timeElapsed" />
+
+            <TextView
+                android:id="@+id/timeTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/seekBar"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignTop="@+id/seekBar"
+                android:gravity="center"
+                tools:text="0:00" />
+
+            <LinearLayout
+                android:id="@+id/playbackControls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/seekBar"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/rhythm_space_single"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/previousButton"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/description_prev_track"
+                    android:src="@drawable/ic_playback_previous"
+                    android:tint="?attr/colorAccent" />
+
+                <ImageButton
+                    android:id="@+id/playButton"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/description_play_pause_track"
+                    android:src="@drawable/ic_playback_play"
+                    android:tint="?attr/colorAccent" />
+
+                <ImageButton
+                    android:id="@+id/nextButton"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/description_next_track"
+                    android:src="@drawable/ic_playback_next"
+                    android:tint="?attr/colorAccent" />
+
+            </LinearLayout>
+
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+
+</RelativeLayout>

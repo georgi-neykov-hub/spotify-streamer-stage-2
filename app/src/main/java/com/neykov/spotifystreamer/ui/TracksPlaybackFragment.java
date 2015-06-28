@@ -1,6 +1,7 @@
 package com.neykov.spotifystreamer.ui;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -8,8 +9,10 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatDialog;
 import android.support.v7.widget.ShareActionProvider;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -17,6 +20,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -41,7 +45,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     public static final String TAG = TracksPlaybackFragment.class.getSimpleName();
     public static final String TIME_INTERVAL_STRING_FORMAT = "%02d:%02d";
 
-    public static TracksPlaybackFragment newInstance(){
+    public static TracksPlaybackFragment newInstance() {
         TracksPlaybackFragment instance = new TracksPlaybackFragment();
         return instance;
     }
@@ -61,25 +65,38 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     private View mLoadingView;
 
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         Activity activity = getActivity();
-        if(activity instanceof ActionBarConfigurable && !getShowsDialog()){
-            ((ActionBarConfigurable)activity).onApplyConfiguratorOptions(this);
+        if (activity instanceof ActionBarConfigurable && !getShowsDialog()) {
+            ((ActionBarConfigurable) activity).onApplyConfiguratorOptions(this);
         }
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
+        setHasOptionsMenu(!getShowsDialog());
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        Dialog dialog = new AppCompatDialog(getActivity(), getTheme());
+        return dialog;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.layout_track_player, container, false);
+        int layoutId = getShowsDialog() ? R.layout.layout_track_player_dialog : R.layout.track_player_layout;
+        View rootView = inflater.inflate(layoutId, container, false);
         initializeViewReferences(rootView);
-        setEventListeners();
+        setEventListeners(rootView);
         togglePlaybackControls(false);
         return rootView;
     }
@@ -104,7 +121,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         detachFromService();
     }
 
-    private void initializeViewReferences(View rootView){
+    private void initializeViewReferences(View rootView) {
         mAlbumArtView = (ImageView) rootView.findViewById(R.id.albumArtView);
         mSeekBar = (SeekBar) rootView.findViewById(R.id.seekBar);
         mPreviousButton = (ImageButton) rootView.findViewById(R.id.previousButton);
@@ -117,11 +134,11 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         mArtistNameView = (TextView) rootView.findViewById(R.id.artistName);
     }
 
-    private void setEventListeners(){
+    private void setEventListeners(View rootView) {
         mPreviousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mPlaybackInterface != null){
+                if (mPlaybackInterface != null) {
                     mPlaybackInterface.playPrevious();
                 }
             }
@@ -129,7 +146,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mPlaybackInterface != null){
+                if (mPlaybackInterface != null) {
                     mPlaybackInterface.playNext();
                 }
             }
@@ -138,35 +155,53 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
             @Override
             public void onClick(View v) {
                 if (mPlaybackInterface != null) {
-                    if(mPlaybackInterface.isPlaying()){
+                    if (mPlaybackInterface.isPlaying()) {
                         mPlaybackInterface.pause();
-                    }else {
+                    } else {
                         mPlaybackInterface.play();
                     }
                 }
             }
         });
         mSeekBar.setOnSeekBarChangeListener(mSeеkChangeListener);
+
+        if (getShowsDialog()) {
+            View shareButton = rootView.findViewById(R.id.action_share_track);
+            shareButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mPlaybackInterface != null) {
+                        Track currentTrack = mPlaybackInterface.getCurrentTrack();
+                        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+                        sharingIntent.setType("text/plain");
+                        sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Subject Here");
+                        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, currentTrack.href);
+                        Intent chooserIntent = Intent.createChooser(sharingIntent, getString(R.string.label_share_via));
+                        startActivity(chooserIntent);
+                    }
+                }
+            });
+        }
     }
 
-    private void togglePlaybackControls(boolean enabled){
+    private void togglePlaybackControls(boolean enabled) {
         mPlayPauseButton.setEnabled(enabled);
         mPreviousButton.setEnabled(enabled);
         mNextButton.setEnabled(enabled);
         toggleSeekBar(enabled);
     }
 
-    private void toggleLoadingView(boolean enabled){
-        int visibility = enabled? View.VISIBLE: View.INVISIBLE;
+    private void toggleLoadingView(boolean enabled) {
+        int visibility = enabled ? View.VISIBLE : View.INVISIBLE;
         mLoadingView.setVisibility(visibility);
     }
 
-    private void toggleSeekBar(boolean available){
+    private void toggleSeekBar(boolean available) {
         mSeekBar.setEnabled(available);
     }
 
-    private void togglePlayButtonState(boolean trackIsPlaying){
-        int iconResource = trackIsPlaying? R.drawable.ic_playback_pause : R.drawable.ic_playback_play;
+    private void togglePlayButtonState(boolean trackIsPlaying) {
+        int iconResource = trackIsPlaying ? R.drawable.ic_playback_pause : R.drawable.ic_playback_play;
         Resources.Theme theme = getActivity().getTheme();
         Drawable iconDrawable = ViewUtils.getDrawable(iconResource, getResources(), theme);
         mPlayPauseButton.setImageDrawable(iconDrawable);
@@ -200,25 +235,25 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         getActivity().bindService(bindIntent, mConnection, 0);
     }
 
-    private void loadTrackImage(Track track){
+    private void loadTrackImage(Track track) {
         Picasso instance = Picasso.with(getActivity().getApplicationContext());
         instance.cancelRequest(mAlbumArtView);
 
-        if(track.album.images != null && !track.album.images.isEmpty()){
+        if (track.album.images != null && !track.album.images.isEmpty()) {
             instance.load(track.album.images.get(0).url)
                     .fit()
                     .centerCrop()
                     .placeholder(R.drawable.ic_av_equalizer)
-                    .error( R.drawable.ic_av_equalizer)
+                    .error(R.drawable.ic_av_equalizer)
                     .into(mAlbumArtView);
-        }else {
+        } else {
             instance.load(R.drawable.ic_av_equalizer)
                     .into(mAlbumArtView);
         }
     }
 
-    private void setShareIntent(Track track){
-        if(mShareActionProvider != null){
+    private void setShareIntent(Track track) {
+        if (mShareActionProvider != null) {
             Intent shareIntent = new Intent()
                     .setAction(Intent.ACTION_SEND)
                     .putExtra(Intent.EXTRA_TEXT, track.href)
@@ -261,14 +296,14 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
     }
 
     private void setTotalDuration(int durationMillis) {
-        if(durationMillis != mSeekBar.getMax()) {
+        if (durationMillis != mSeekBar.getMax()) {
             mDurationTextView.setText(getLabelForTime(durationMillis));
             mSeekBar.setMax(durationMillis);
         }
     }
 
     private void setElapsedTime(int elapsedTimeMillis) {
-        if(elapsedTimeMillis != mSeekBar.getProgress()){
+        if (elapsedTimeMillis != mSeekBar.getProgress()) {
             mElapsedTextView.setText(getLabelForTime(elapsedTimeMillis));
             mSeekBar.setProgress(elapsedTimeMillis);
         }
@@ -314,7 +349,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
-            if(mPlaybackInterface != null){
+            if (mPlaybackInterface != null) {
                 mPlaybackInterface.seekToPosition(seekBar.getProgress());
             }
             mElapsedTextView.setText(getLabelForTime(seekBar.getProgress()));
@@ -327,7 +362,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
         public void onServiceConnected(ComponentName name, IBinder service) {
             mPlaybackInterface = (PlaybackInterface) service;
             mPlaybackInterface.setPlaybackListener(TracksPlaybackFragment.this);
-            if(getView() != null){
+            if (getView() != null) {
                 Track currentTrack = mPlaybackInterface.getCurrentTrack();
                 loadTrackImage(currentTrack);
                 setTrackNameLabels(currentTrack);
@@ -344,7 +379,7 @@ public class TracksPlaybackFragment extends DialogFragment implements ActionbarC
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            if(getView() != null){
+            if (getView() != null) {
                 togglePlaybackControls(false);
             }
             mPlaybackInterface = null;

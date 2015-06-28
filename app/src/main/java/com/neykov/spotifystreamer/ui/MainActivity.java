@@ -1,7 +1,10 @@
 package com.neykov.spotifystreamer.ui;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -18,11 +21,15 @@ import kaaes.spotify.webapi.android.models.Track;
 
 public class MainActivity extends AppCompatActivity implements ActionBarConfigurable, ArtistListFragment.OnArtistSelectedListener, ArtistTopTracksFragment.OnTrackSelectedListener {
 
+    private boolean mDualPaneMode;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        mDualPaneMode = getResources().getBoolean(R.bool.has_two_panes);
+        setContentView(R.layout.activity_main_layout);
         initializeToolbar();
+        repositionFragments();
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
@@ -86,24 +93,22 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
         }
 
         //Restore the back stack;
-        ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(artist);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
-                .addToBackStack(ArtistTopTracksFragment.TAG)
-                .commit();
-
+        ArtistTopTracksFragment topTracksFragment = ArtistTopTracksFragment.newInstance(artist);
+        showArtistTopTracksFragment(topTracksFragment);
         TracksPlaybackFragment playbackFragment = TracksPlaybackFragment.newInstance();
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, playbackFragment, TracksPlaybackFragment.TAG)
-                .addToBackStack(TracksPlaybackFragment.TAG)
-                .commit();
+        showTrackPlayerFragment(playbackFragment);
     }
 
     @Override
     public void onArtistSelected(Artist artist) {
         ArtistTopTracksFragment fragment = ArtistTopTracksFragment.newInstance(artist);
+        showArtistTopTracksFragment(fragment);
+    }
+
+    private void showArtistTopTracksFragment(ArtistTopTracksFragment fragment) {
+        int containerId = mDualPaneMode? R.id.detail_frame : R.id.content_frame;
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, fragment, ArtistTopTracksFragment.TAG)
+                .replace(containerId, fragment, ArtistTopTracksFragment.TAG)
                 .addToBackStack(ArtistTopTracksFragment.TAG)
                 .commit();
 
@@ -126,13 +131,56 @@ public class MainActivity extends AppCompatActivity implements ActionBarConfigur
 
         //Start the playback fragment that visualizes the service controls
         TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance();
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, fragment, TracksPlaybackFragment.TAG)
-                .addToBackStack(TracksPlaybackFragment.TAG)
-                .commit();
+        showTrackPlayerFragment(fragment);
+    }
+
+    private void showTrackPlayerFragment(TracksPlaybackFragment fragment) {
+        if(mDualPaneMode){
+            @SuppressLint("CommitTransaction")
+            FragmentTransaction ft = getSupportFragmentManager()
+                    .beginTransaction()
+                    .addToBackStack(TracksPlaybackFragment.TAG);
+            fragment.show(ft, TracksPlaybackFragment.TAG);
+        }else {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.content_frame, fragment, TracksPlaybackFragment.TAG)
+                    .addToBackStack(TracksPlaybackFragment.TAG)
+                    .commit();
+        }
 
         //Execute the transaction synchronously to avoid
         // any multiple instances of the fragment by doing fast-clicks.
         getSupportFragmentManager().executePendingTransactions();
+    }
+
+    private void repositionFragments(){
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if(fragmentManager.getBackStackEntryCount() == 0){
+            return;
+        }
+
+        TracksPlaybackFragment playbackFragment = (TracksPlaybackFragment) fragmentManager.findFragmentByTag(TracksPlaybackFragment.TAG);
+        if(playbackFragment != null){
+            fragmentManager.popBackStackImmediate(TracksPlaybackFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+            fragmentManager.beginTransaction()
+                    .remove(playbackFragment)
+                    .detach(playbackFragment)
+                    .commit();
+            fragmentManager.executePendingTransactions();
+        }
+
+        ArtistTopTracksFragment topTracksFragment = (ArtistTopTracksFragment) fragmentManager.findFragmentByTag(ArtistTopTracksFragment.TAG);
+        if(topTracksFragment != null){
+            fragmentManager.popBackStackImmediate(ArtistTopTracksFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        }
+
+        if (topTracksFragment != null) {
+            showArtistTopTracksFragment(topTracksFragment);
+        }
+
+        if (playbackFragment != null) {
+            TracksPlaybackFragment instance = TracksPlaybackFragment.newInstance();
+            showTrackPlayerFragment(instance);
+        }
     }
 }

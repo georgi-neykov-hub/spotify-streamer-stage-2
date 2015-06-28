@@ -10,11 +10,11 @@ import android.support.v4.content.Loader;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.SearchView;
 
 import com.neykov.spotifystreamer.R;
 import com.neykov.spotifystreamer.SpotifyStreamerApplication;
@@ -34,9 +34,9 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter.OnItemSelectedListener<Artist>{
+public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter.OnItemSelectedListener<Artist> {
 
-    public interface OnArtistSelectedListener{
+    public interface OnArtistSelectedListener {
         void onArtistSelected(Artist artist);
     }
 
@@ -64,7 +64,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        if(activity instanceof OnArtistSelectedListener){
+        if (activity instanceof OnArtistSelectedListener) {
             mArtistListener = (OnArtistSelectedListener) activity;
         }
     }
@@ -102,7 +102,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if(mLayoutManager!= null) {
+        if (mLayoutManager != null) {
             outState.putParcelable(KEY_LAYOUT_MANAGER_STATE, mLayoutManager.onSaveInstanceState());
         }
         outState.putParcelable(KEY_ADAPTER_STATE, mArtistAdapter.onSaveInstanceState());
@@ -127,7 +127,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
 
     @Override
     public void onItemSelected(int position, Artist item) {
-        if(mArtistListener != null){
+        if (mArtistListener != null) {
             mArtistListener.onArtistSelected(item);
         }
     }
@@ -166,9 +166,9 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                if(TextUtils.isEmpty(query)){
+                if (TextUtils.isEmpty(query)) {
                     mArtistAdapter.clearItems();
-                }else {
+                } else {
                     executeArtistQuery(query);
                 }
                 ViewUtils.hideSoftwareKeyboard(getActivity());
@@ -189,7 +189,7 @@ public class ArtistListFragment extends BaseFragment implements BaseArrayAdapter
     }
 
     private void showQueryErrorMessage() {
-        View container = getActivity().findViewById(android.R.id.content);
+        View container = getActivity().findViewById(R.id.coordinatorLayout);
         Snackbar.make(container, R.string.message_artist_query_error, Snackbar.LENGTH_LONG)
                 .setAction(R.string.action_retry, new View.OnClickListener() {
                     @Override

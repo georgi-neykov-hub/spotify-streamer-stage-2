@@ -24,7 +24,6 @@ import com.neykov.spotifystreamer.networking.ArtistTracksQueryLoader;
 import com.neykov.spotifystreamer.networking.NetworkResult;
 import com.neykov.spotifystreamer.ui.base.BaseFragment;
 
-import java.util.Arrays;
 import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -201,7 +200,7 @@ public class ArtistTopTracksFragment extends BaseFragment {
     }
 
     private void showQueryErrorMessage() {
-        View container = getActivity().findViewById(android.R.id.content);
+        View container = getActivity().findViewById(R.id.coordinatorLayout);
         Snackbar.make(container, R.string.message_artist_query_error, Snackbar.LENGTH_SHORT)
                 .setAction(R.string.action_retry, new View.OnClickListener() {
                     @Override

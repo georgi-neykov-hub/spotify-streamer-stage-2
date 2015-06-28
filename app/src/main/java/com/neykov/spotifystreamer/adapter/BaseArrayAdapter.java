@@ -9,8 +9,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import kaaes.spotify.webapi.android.models.Track;
-
 public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH>{
 
     public interface OnItemSelectedListener<T>{
@@ -29,6 +27,7 @@ public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> ex
         return mItems.size();
     }
 
+    @SuppressWarnings("unchecked")
     public Parcelable onSaveInstanceState() {
         Bundle state = new Bundle();
         T[] entries = (T[]) mItems.toArray();
@@ -36,6 +35,7 @@ public abstract class BaseArrayAdapter<T, VH extends RecyclerView.ViewHolder> ex
         return state;
     }
 
+    @SuppressWarnings("unchecked")
     public void onRestoreInstanceState(Parcelable savedAdapterState) {
         Bundle state = (Bundle) savedAdapterState;
         if (state == null) {
